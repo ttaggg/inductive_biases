@@ -19,6 +19,6 @@ dependencies = [
 package = true
 
 [project.scripts]
-training = "ib.scripts.training:app"
-visualization = "ib.scripts.visualization:app"
-resampling = "ib.scripts.resampling:app"
+training = "ib.training:app"
+visualization = "ib.visualization:app"
+resampling = "ib.resampling:app"

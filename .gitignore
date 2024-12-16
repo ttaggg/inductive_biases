@@ -1,6 +1,8 @@
-# Package
+# uv
 .python-version
 uv.lock
+.venv
+*.egg-info/
 
 # Outputs
 outputs
@@ -9,9 +11,6 @@ outputs
 *.pyc
 **/__pycache__
 \.*.py%%
-
-# uv
-.venv
 
 # Misc
 **/.DS_Store
