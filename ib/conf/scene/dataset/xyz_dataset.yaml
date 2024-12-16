@@ -1,0 +1,3 @@
+_target_: ib.datasets.pointcloud_datasets.XyzDataset
+file_path: ${scene.file_path}
+off_surface_ratio: 0.5

@@ -1,0 +1,15 @@
+# Devices
+num_workers: 8
+persistent_workers: True
+accelerator: gpu
+devices: 1
+
+# Training
+max_epochs: 10000
+batch_size: 4096
+lr: 1e-4
+gradient_clip_val: 1.0
+
+# Debug
+limit_train_batches: null
+fast_dev_run: False

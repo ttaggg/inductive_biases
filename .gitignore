@@ -1,0 +1,19 @@
+# Package
+.python-version
+uv.lock
+
+# Outputs
+outputs
+
+# Python
+*.pyc
+**/__pycache__
+\.*.py%%
+
+# uv
+.venv
+pyproject.toml
+
+# Misc
+**/.DS_Store
+

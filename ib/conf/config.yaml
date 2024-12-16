@@ -1,0 +1,18 @@
+# Defaults.
+defaults:
+  - _self_
+  - scene: ???
+  - model: original_siren
+  - trainer: base_trainer
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+# Global flags.
+run_name: default
+output_dir_root: ../outputs/
+
+# Supress hydra outputs for now.
+hydra:
+  output_subdir: null
+  run:
+    dir: .

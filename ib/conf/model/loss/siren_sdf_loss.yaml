@@ -1,0 +1,4 @@
+_target_: ib.models.losses.siren_losses.SirenSdfLoss
+lambda_1: 50
+lambda_2: 3000
+lambda_3: 100
