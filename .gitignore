@@ -12,7 +12,6 @@ outputs
 
 # uv
 .venv
-pyproject.toml
 
 # Misc
 **/.DS_Store
