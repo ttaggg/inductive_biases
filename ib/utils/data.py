@@ -1,6 +1,6 @@
 """Data related utils."""
 
-from typing import Tuple
+from typing import Dict, Tuple, Callable
 
 import numpy as np
 
@@ -68,3 +68,21 @@ def load_xyz(file_path: str) -> Tuple[np.ndarray, np.ndarray]:
     points = point_cloud[:, :3]
     normals = point_cloud[:, 3:]
     return points, normals
+
+
+def write_obj(
+    file_path: str,
+    field_data: Dict[str, np.array],
+) -> None:
+    """Write OBJ pointcloud.
+
+    Args:
+        file_path (str): path to the file.
+        field_data (Dict[str, np.array]): name of the field to write and
+            its values in the array, line by line.
+    """
+    with open(file_path, "w") as outfile:
+        for field, data in field_data.items():
+            for row in data:
+                row = list(map(str, row))
+                outfile.write(f"{field} {' '.join(row)}\n")
