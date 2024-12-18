@@ -1,0 +1,5 @@
+defaults:
+  - dataset: obj_dataset
+
+name: sofa
+file_path: ${oc.env:HOME}/datasets/3d_scenes/sofa/normalized_model_resampled_100000.obj
