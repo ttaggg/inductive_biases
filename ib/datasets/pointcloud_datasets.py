@@ -6,7 +6,7 @@ from typing import Dict, Tuple
 import numpy as np
 from torch.utils.data import Dataset
 
-from ib.utils.data import normalize_points_and_normals
+from ib.utils.data import load_obj, load_xyz, normalize_points_and_normals
 from ib.utils.logging_module import logging
 
 
@@ -58,29 +58,11 @@ class ObjDataset(PointCloudDataset):
     """Dataset class for OBJ format data."""
 
     def load(self, file_path: str) -> Tuple[np.ndarray, np.ndarray]:
-        points = []
-        normals = []
-        with open(file_path, "r") as file:
-            for line in file:
-                if line.startswith("v "):
-                    # Parse a vertex line
-                    parts = line.strip().split()
-                    point = tuple(map(float, parts[1:4]))
-                    points.append(point)
-                elif line.startswith("vn "):
-                    # Parse a normal line
-                    parts = line.strip().split()
-                    normal = tuple(map(float, parts[1:4]))
-                    normals.append(normal)
-        assert len(points) == len(normals)
-        return np.array(points), np.array(normals)
+        return load_obj(file_path, {"v": float, "vn": float})
 
 
 class XyzDataset(PointCloudDataset):
     """Dataset class for XYZ format data."""
 
     def load(self, file_path: str) -> Tuple[np.ndarray, np.ndarray]:
-        point_cloud = np.genfromtxt(file_path)
-        points = point_cloud[:, :3]
-        normals = point_cloud[:, 3:]
-        return points, normals
+        return load_xyz(file_path)
