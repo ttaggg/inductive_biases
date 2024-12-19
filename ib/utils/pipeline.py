@@ -4,6 +4,7 @@ import os
 from datetime import date
 from typing import Tuple
 
+import torch
 from typer import Context
 from hydra import initialize, compose
 from omegaconf import OmegaConf, DictConfig
@@ -25,10 +26,13 @@ def init_dir(output_dir_root: str, run_name: str) -> str:
 
 
 def initialize_run(ctx: Context) -> Tuple[DictConfig, str]:
-    """Load Hydra configs, initialize output directory, and logging file."""
+    """Load Hydra configs, initialize output directory,
+    set logging file, set torch float32 matmul precision."""
 
     with initialize(config_path="../conf", version_base=None):
         cfg = compose(config_name="config", overrides=ctx.args)
+
+    torch.set_float32_matmul_precision(cfg.trainer.float32_matmul_precision)
 
     output_dir = init_dir(cfg.output_dir_root, cfg.run_name)
     logging.set_log_file(output_dir)

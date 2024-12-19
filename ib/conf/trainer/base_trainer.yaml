@@ -3,6 +3,7 @@ num_workers: 8
 persistent_workers: True
 accelerator: gpu
 devices: 1
+float32_matmul_precision: highest
 
 # Training
 max_epochs: 10000
