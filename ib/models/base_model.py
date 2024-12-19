@@ -25,8 +25,8 @@ class BaseModel(L.LightningModule):
         model_outputs = self.inr(model_inputs["inputs"])
         losses = self.loss_fn(model_inputs, model_outputs)
         loss = torch.stack(list(losses.values())).mean()
-        self.log("loss", loss, on_step=True, prog_bar=True)
-        self.log_dict(losses, on_step=True, prog_bar=True)
+        self.log("loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log_dict(losses, on_step=False, on_epoch=True, prog_bar=True)
         return loss
 
     def configure_optimizers(self) -> Optimizer:

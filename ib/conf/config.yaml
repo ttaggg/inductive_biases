@@ -9,7 +9,7 @@ defaults:
 
 # Global flags.
 run_name: default
-output_dir_root: ../outputs/
+output_dir_root: ${oc.env:HOME}/outputs/
 
 # Supress hydra outputs for now.
 hydra:
