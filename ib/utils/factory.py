@@ -23,10 +23,12 @@ def create_loader(dataset_cfg: DictConfig, trainer_cfg: DictConfig) -> DataLoade
     if trainer_cfg.num_workers > 0:
         kwargs = {"pin_memory": True, "multiprocessing_context": None}
 
+    # NOTE(oleg): currently we create the whole batch in the dataset,
+    # because it is 10+ times faster for pointclouds than the normal way.
     data_loader = DataLoader(
         dataset,
-        batch_size=trainer_cfg.batch_size,
         shuffle=True,
+        batch_size=1,
         num_workers=trainer_cfg.num_workers,
         persistent_workers=trainer_cfg.persistent_workers,
         **kwargs,
@@ -56,7 +58,6 @@ def create_trainer(trainer_cfg: DictConfig, output_dir: str) -> L.Trainer:
         logger=TensorBoardLogger(save_dir=output_dir),
         callbacks=[LearningRateMonitor(logging_interval="epoch")],
         # Always same.
-        deterministic=True,
         default_root_dir=output_dir,
         enable_checkpointing=True,
         # Debug.

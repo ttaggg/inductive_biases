@@ -1,3 +1,4 @@
 _target_: ib.datasets.pointcloud_datasets.XyzDataset
 file_path: ${scene.file_path}
+batch_size: ${trainer.batch_size}
 off_surface_ratio: 0.5
