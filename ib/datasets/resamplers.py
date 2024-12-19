@@ -1,7 +1,6 @@
 """Resample points on OBJ mesh."""
 
 import numpy as np
-import open3d as o3d
 
 from ib.utils.data import load_obj, write_obj
 from ib.utils.logging_module import logging
@@ -81,6 +80,9 @@ class ObjResampler:
             self.sampled_vertices[i] = sample_point_in_triangle(v0, v1, v2)
             self.sampled_normals[i] = compute_face_normal(v0, v1, v2)
 
+            if i % int(num_samples * 0.1) == 0:
+                logging.info(f"{i} / {num_samples} steps are done.")
+
     def save(self, file_path: str) -> None:
         field_data = {"v": self.sampled_vertices, "vn": self.sampled_normals}
         write_obj(file_path, field_data)
@@ -88,6 +90,8 @@ class ObjResampler:
 
     def show_sampled(self):
         """Visualize sampled points and normals with open3d."""
+        import open3d as o3d
+
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(self.sampled_vertices)
         pcd.normals = o3d.utility.Vector3dVector(self.sampled_normals)
