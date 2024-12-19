@@ -1,0 +1,5 @@
+defaults:
+  - dataset: xyz_dataset
+
+name: siren_room
+file_path: ${oc.env:HOME}/datasets/3d_scenes/siren_room/interior_room.xyz

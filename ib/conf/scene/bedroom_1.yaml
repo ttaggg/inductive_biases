@@ -2,4 +2,4 @@ defaults:
   - dataset: obj_dataset
 
 name: bedroom_1
-file_path: ${oc.env:HOME}/datasets/3d_scenes/bedroom_1/bedroom_1_resampled_1000000.obj
+file_path: ${oc.env:HOME}/datasets/3d_scenes/bedroom_1/bedroom_1_resampled_10000000.obj
