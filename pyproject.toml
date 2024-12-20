@@ -9,15 +9,12 @@ dependencies = [
     "hydra-core>=1.3.2",
     "lightning>=2.4.0",
     "numpy>=2.2.0",
+    "open3d>=0.18.0",
     "rich>=13.9.4",
+    "scikit-image>=0.25.0",
     "tensorboard>=2.18.0",
     "torch==2.5.1",
     "typer>=0.15.1",
-]
-
-[dependency-groups]
-open3d = [
-    "open3d>=0.18.0",
 ]
 
 [tool.uv]
@@ -25,5 +22,5 @@ package = true
 
 [project.scripts]
 training = "ib.training:app"
-visualization = "ib.visualization:app"
+decoding = "ib.decoding:app"
 resampling = "ib.resampling:app"

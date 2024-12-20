@@ -21,8 +21,8 @@ class BaseModel(L.LightningModule):
         self.inr = instantiate(model_cfg.inr)
         self.loss_fn = instantiate(model_cfg.loss)
 
-    def forward(self, model_inputs: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        return self.inr(model_inputs["inputs"])
+    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+        return self.inr(inputs)["output"]
 
     def training_step(self, model_inputs: Dict[str, torch.Tensor], _) -> torch.Tensor:
         model_outputs = self.inr(model_inputs["inputs"])
