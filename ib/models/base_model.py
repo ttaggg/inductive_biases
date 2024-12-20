@@ -1,5 +1,6 @@
 """Base models for INR training."""
 
+import os
 from typing import Dict
 
 import lightning as L
@@ -7,6 +8,8 @@ import torch
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from torch.optim import Optimizer
+
+from ib.utils.model import save_model
 
 
 class BaseModel(L.LightningModule):
@@ -32,3 +35,12 @@ class BaseModel(L.LightningModule):
     def configure_optimizers(self) -> Optimizer:
         optimizer = torch.optim.Adam(self.inr.parameters(), lr=self.model_cfg.lr)
         return optimizer
+
+    def on_train_epoch_end(self) -> None:
+        """Actions to make in the end of epoch."""
+        if self.current_epoch % self.model_cfg.save_model_every_n_epochs == 0:
+            save_model(self, self.trainer.default_root_dir, self.current_epoch)
+
+    def on_train_end(self) -> None:
+        """Actions to perform after the training is complete."""
+        save_model(self, self.trainer.default_root_dir, self.current_epoch)

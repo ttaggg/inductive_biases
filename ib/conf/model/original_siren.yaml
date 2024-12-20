@@ -4,3 +4,4 @@ defaults:
 
 name: siren_original
 lr: ${trainer.lr}
+save_model_every_n_epochs: ${trainer.save_model_every_n_epochs}
