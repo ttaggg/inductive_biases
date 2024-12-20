@@ -23,7 +23,8 @@ def generate_output_path(model_path, resolution):
 @app.command(no_args_is_help=True)
 def decoding(
     model_path: Annotated[str, typer.Option(...)],
-    resolution: int = 64,
+    resolution: int = 512,
+    batch_size: int = 256000,
     device: str = "cuda",
     visualize: bool = False,
 ) -> None:
@@ -38,7 +39,7 @@ def decoding(
     model.eval()
 
     logging.stage("Performing forward pass.")
-    sdf = query_model(model, resolution)
+    sdf = query_model(model, resolution, batch_size, device)
 
     logging.stage("Performing marching cubes.")
     verts, faces, normals, _ = measure.marching_cubes(sdf, level=0)
@@ -51,7 +52,7 @@ def decoding(
 
     output_path = generate_output_path(model_path, resolution)
     o3d.io.write_triangle_mesh(output_path, mesh)
-    logging.stage(f"Mesh is written to {output_path}.")
+    logging.stage(f"Mesh was written to {output_path}")
 
     if visualize:
         o3d.visualization.draw_geometries([mesh], mesh_show_wireframe=True)

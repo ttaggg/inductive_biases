@@ -86,7 +86,7 @@ class ObjResampler:
     def save(self, file_path: str) -> None:
         field_data = {"v": self.sampled_vertices, "vn": self.sampled_normals}
         write_obj(file_path, field_data)
-        logging.stage(f"Pointcloud was saved to {file_path}.")
+        logging.stage(f"Pointcloud was saved to {file_path}")
 
     def show_sampled(self):
         """Visualize sampled points and normals with open3d."""
