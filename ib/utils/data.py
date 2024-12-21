@@ -21,6 +21,7 @@ def normalize_points_and_normals(
             - normals (np.ndarray): Unit normals.
     """
     points -= np.mean(points, axis=0, keepdims=True)
+    # TODO(oleg): consider normalization without preserving aspect ratio.
     coord_max = np.amax(points)
     coord_min = np.amin(points)
     points = (points - coord_min) / (coord_max - coord_min)

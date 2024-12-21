@@ -27,7 +27,9 @@ def make_coordinates(
     x_coords = np.linspace(coord_range[0], coord_range[1], grid_size[0])
     y_coords = np.linspace(coord_range[0], coord_range[1], grid_size[1])
     z_coords = np.linspace(coord_range[0], coord_range[1], grid_size[2])
-    x_coords, y_coords, z_coords = np.meshgrid(x_coords, y_coords, z_coords)
+    x_coords, y_coords, z_coords = np.meshgrid(
+        x_coords, y_coords, z_coords, indexing="ij"
+    )
     x_coords = x_coords.flatten()
     y_coords = y_coords.flatten()
     z_coords = z_coords.flatten()
