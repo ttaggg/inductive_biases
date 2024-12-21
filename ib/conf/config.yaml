@@ -11,6 +11,9 @@ defaults:
 run_name: default
 output_dir_root: ${oc.env:HOME}/outputs/
 
+# Paths
+paths: null
+
 # Supress hydra outputs for now.
 hydra:
   output_subdir: null

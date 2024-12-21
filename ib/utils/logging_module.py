@@ -2,7 +2,6 @@
 
 import logging as default_logging
 import os
-from datetime import datetime
 from typing import Union
 
 from rich.panel import Panel
@@ -22,8 +21,7 @@ class LoggingModule:
     def set_log_file(self, file_dir: str) -> None:
         """Set the log file dynamically at runtime."""
 
-        now = datetime.now().strftime("%H_%M_%S")
-        self.log_file_path = os.path.join(file_dir, f"logs_{now}.txt")
+        self.log_file_path = os.path.join(file_dir, f"logs.txt")
 
         # Remove previous file handler, if any
         if self.file_handler:

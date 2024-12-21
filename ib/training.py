@@ -23,7 +23,7 @@ def training(ctx: typer.Context) -> None:
     """
 
     # Initialize: resolve configs, output directory and logging.
-    cfg, output_dir = initialize_run(ctx)
+    cfg = initialize_run(ctx)
 
     # Load the data.
     data_loader = create_loader(cfg.scene.dataset, cfg.trainer)
@@ -32,7 +32,7 @@ def training(ctx: typer.Context) -> None:
     model = create_model(cfg.model)
 
     # Create the trainer.
-    trainer = create_trainer(cfg.trainer, output_dir)
+    trainer = create_trainer(cfg.trainer)
 
     # Run training.
     logging.stage("Running training.")

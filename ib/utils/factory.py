@@ -45,7 +45,7 @@ def create_model(model_cfg: DictConfig) -> nn.Module:
     raise ValueError(f"Unknown model was given: {model_cfg.name}.")
 
 
-def create_trainer(trainer_cfg: DictConfig, output_dir: str) -> L.Trainer:
+def create_trainer(trainer_cfg: DictConfig) -> L.Trainer:
     """Configure trainer."""
 
     trainer = L.Trainer(
@@ -55,11 +55,11 @@ def create_trainer(trainer_cfg: DictConfig, output_dir: str) -> L.Trainer:
         max_epochs=trainer_cfg.max_epochs,
         gradient_clip_val=trainer_cfg.gradient_clip_val,
         # Callbacks and loggers.
-        logger=TensorBoardLogger(save_dir=output_dir),
+        logger=TensorBoardLogger(
+            save_dir=trainer_cfg.paths.lightning_logs, name="", version=""
+        ),
         callbacks=[LearningRateMonitor(logging_interval="epoch")],
-        # Always same.
-        default_root_dir=output_dir,
-        enable_checkpointing=True,
+        enable_checkpointing=False,
         # Debug.
         fast_dev_run=trainer_cfg.fast_dev_run,
         limit_train_batches=trainer_cfg.limit_train_batches,

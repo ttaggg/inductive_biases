@@ -21,7 +21,7 @@ class BaseModel(L.LightningModule):
         self.inr = instantiate(model_cfg.inr)
         self.loss_fn = instantiate(model_cfg.loss)
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         return self.inr(inputs)["output"]
 
     def training_step(self, model_inputs: Dict[str, torch.Tensor], _) -> torch.Tensor:
@@ -39,7 +39,7 @@ class BaseModel(L.LightningModule):
     def on_train_epoch_end(self) -> None:
         """Actions to make in the end of epoch."""
         if self.current_epoch % self.model_cfg.save_model_every_n_epochs == 0:
-            save_model(self, self.trainer.default_root_dir, self.current_epoch)
+            save_model(self, self.model_cfg.paths.saved_models, self.current_epoch)
 
     def on_train_end(self) -> None:
         """Actions to perform after the training is complete."""
