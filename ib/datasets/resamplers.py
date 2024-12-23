@@ -1,6 +1,7 @@
 """Resample points on OBJ mesh."""
 
 import numpy as np
+from pathlib import Path
 
 from ib.utils.data import load_obj, write_obj
 from ib.utils.logging_module import logging
@@ -83,7 +84,7 @@ class ObjResampler:
             if i % int(num_samples * 0.1) == 0:
                 logging.info(f"{i} / {num_samples} steps are done.")
 
-    def save(self, file_path: str) -> None:
+    def save(self, file_path: Path) -> None:
         field_data = {"v": self.sampled_vertices, "vn": self.sampled_normals}
         write_obj(file_path, field_data)
         logging.stage(f"Pointcloud was saved to {file_path}")

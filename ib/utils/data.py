@@ -1,5 +1,6 @@
 """Data related utils."""
 
+from pathlib import Path
 from typing import Dict, Tuple, Callable
 
 import numpy as np
@@ -72,7 +73,7 @@ def load_xyz(file_path: str) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def write_obj(
-    file_path: str,
+    file_path: Path,
     field_data: Dict[str, np.array],
 ) -> None:
     """Write OBJ pointcloud.

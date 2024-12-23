@@ -1,6 +1,6 @@
 """Utils for models."""
 
-import os
+from pathlib import Path
 from typing import Tuple
 
 import lightning as L
@@ -10,12 +10,9 @@ import torch
 from ib.utils.logging_module import logging
 
 
-def save_model(model: L.LightningModule, output_dir: str, epoch: int) -> None:
+def save_model(model: L.LightningModule, output_dir: Path, epoch: int) -> None:
     """Save the whole model."""
-    model_path = os.path.join(
-        output_dir,
-        f"model_epoch_{epoch}.pt",
-    )
+    model_path = output_dir / f"model_epoch_{epoch}.pt"
     torch.save(model, model_path)
 
 

@@ -1,7 +1,7 @@
 """Custom logging module."""
 
 import logging as default_logging
-import os
+from pathlib import Path
 from typing import Union
 
 from rich.panel import Panel
@@ -18,10 +18,10 @@ class LoggingModule:
         self.file_handler = None
         self.console = Console(record=True)
 
-    def set_log_file(self, file_dir: str) -> None:
+    def set_log_file(self, file_dir: Path) -> None:
         """Set the log file dynamically at runtime."""
 
-        self.log_file_path = os.path.join(file_dir, f"logs.txt")
+        self.log_file_path = file_dir / f"logs.txt"
 
         # Remove previous file handler, if any
         if self.file_handler:

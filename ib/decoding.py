@@ -1,6 +1,6 @@
 """Export INR model to mesh."""
 
-import os
+from pathlib import Path
 from typing_extensions import Annotated
 
 import numpy as np
@@ -11,18 +11,20 @@ from skimage import measure
 
 from ib.utils.logging_module import logging
 from ib.utils.model import query_model
+from ib.utils.pipeline import resolve_and_expand_path
 
 app = typer.Typer(add_completion=False)
 
 
-def generate_output_path(model_path, resolution):
-    base, _ = os.path.splitext(model_path)
-    return f"{base}_mesh_{resolution}.ply"
+def generate_output_path(model_path: Path, resolution: int) -> str:
+    meshes_dir = model_path.parents[1] / "meshes"
+    meshes_dir.mkdir(parents=True, exist_ok=True)
+    return str(meshes_dir / f"mesh_{model_path.stem}_res_{resolution}.ply")
 
 
 @app.command(no_args_is_help=True)
 def decoding(
-    model_path: Annotated[str, typer.Option(...)],
+    model_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
     resolution: int = 512,
     batch_size: int = 256000,
     device: str = "cuda",
@@ -31,7 +33,7 @@ def decoding(
     """Export encoded in the INR shape to mesh.
 
     uv run decoding --model-path=[MODEL_PATH] --device=[DEVICE]
-        --resolution[SDF_RESOLUTION] --visualize[OPEN3D_VIS]
+        --resolution=[SDF_RESOLUTION] --visualize=[OPEN3D_VIS]
     """
     logging.stage("Running export.")
 

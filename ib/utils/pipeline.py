@@ -1,7 +1,7 @@
 """General utilities."""
 
-import os
 from datetime import date
+from pathlib import Path
 from types import SimpleNamespace
 
 import torch
@@ -10,6 +10,10 @@ from hydra import initialize, compose
 from omegaconf import OmegaConf, DictConfig
 
 from ib.utils.logging_module import logging
+
+
+def resolve_and_expand_path(path: Path) -> Path:
+    return path.expanduser().resolve()
 
 
 def initialize_directories(output_dir_root: str, run_name: str) -> SimpleNamespace:
@@ -30,31 +34,31 @@ def initialize_directories(output_dir_root: str, run_name: str) -> SimpleNamespa
     """
 
     output_dir_base = f"{date.today().strftime('%y-%m-%d')}_{run_name}"
-    output_dir = os.path.join(output_dir_root, output_dir_base)
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir = Path(output_dir_root) / output_dir_base
+    resolve_and_expand_path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Determine the next version
     version_dirs = [
         subdir
-        for subdir in os.listdir(output_dir)
-        if os.path.isdir(os.path.join(output_dir, subdir))
-        and subdir.startswith("version_")
+        for subdir in output_dir.iterdir()
+        if subdir.is_dir() and subdir.name.startswith("version_")
     ]
     next_version = f"version_{len(version_dirs)}"
 
     # Create directories for the new version
-    version_dir = os.path.join(output_dir, next_version)
-    lightning_logs_dir = os.path.join(version_dir, "lightning_logs")
-    saved_models_dir = os.path.join(version_dir, "saved_models")
+    version_dir = output_dir / next_version
+    lightning_logs_dir = version_dir / "lightning_logs"
+    saved_models_dir = version_dir / "saved_models"
 
-    os.makedirs(lightning_logs_dir, exist_ok=True)
-    os.makedirs(saved_models_dir, exist_ok=True)
+    lightning_logs_dir.mkdir(parents=True, exist_ok=True)
+    saved_models_dir.mkdir(parents=True, exist_ok=True)
 
     # Create or update the 'latest' symlink
-    symlink_path = os.path.join(output_dir, "latest")
-    if os.path.islink(symlink_path) or os.path.exists(symlink_path):
-        os.remove(symlink_path)
-    os.symlink(version_dir, symlink_path)
+    symlink_path = output_dir / "latest"
+    if symlink_path.is_symlink() or symlink_path.exists():
+        symlink_path.unlink()
+    symlink_path.symlink_to(version_dir)
 
     return SimpleNamespace(
         version=version_dir,
@@ -83,7 +87,7 @@ def initialize_run(ctx: Context) -> DictConfig:
         f"Output directory: {cfg.paths.version} \nLogs: {logging.log_file_path}",
         title="Outputs",
     )
-    OmegaConf.save(config=cfg, f=os.path.join(cfg.paths.version, "config.yaml"))
+    OmegaConf.save(config=cfg, f=cfg.paths.version / "config.yaml")
 
     # Also set float32_matmul_precision.
     # TODO(oleg): maybe remove this part, it does not belong here.
