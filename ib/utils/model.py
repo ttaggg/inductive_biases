@@ -31,9 +31,10 @@ def make_coordinates(
     y_coords = y_coords.flatten()
     z_coords = z_coords.flatten()
     coords = np.stack([x_coords, y_coords, z_coords]).T
-    return torch.from_numpy(coords).type(torch.float32)
+    return torch.from_numpy(coords.astype(np.float32))
 
 
+@torch.no_grad()
 def query_model(
     model: L.LightningModule,
     resolution: int,
