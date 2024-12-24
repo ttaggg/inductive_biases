@@ -32,13 +32,13 @@ def resampling(
     logging.stage("Running resampling.")
 
     resampler = ObjResampler(input_path)
-    resampler.sample_vertices_and_normals(num_samples)
+    resampler.run(num_samples)
 
     output_path = generate_output_path(input_path, num_samples)
     resampler.save(output_path)
 
     if visualize:
-        resampler.show_sampled()
+        resampler.show()
 
 
 if __name__ == "__main__":

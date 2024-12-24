@@ -3,14 +3,10 @@
 from pathlib import Path
 from typing_extensions import Annotated
 
-import numpy as np
-import open3d as o3d
-import torch
 import typer
-from skimage import measure
 
+from ib.models.decoders import SdfDecoder
 from ib.utils.logging_module import logging
-from ib.utils.model import query_model
 from ib.utils.pipeline import resolve_and_expand_path
 
 app = typer.Typer(add_completion=False)
@@ -35,29 +31,16 @@ def decoding(
     uv run decoding --model-path=[MODEL_PATH] --device=[DEVICE]
         --resolution=[SDF_RESOLUTION] --visualize=[OPEN3D_VIS]
     """
-    logging.stage("Running export.")
+    logging.stage("Running export to a mesh.")
 
-    model = torch.load(model_path, weights_only=False, map_location=device)
-    model.eval()
-
-    logging.stage("Performing forward pass.")
-    sdf = query_model(model, resolution, batch_size, device)
-
-    logging.stage("Performing marching cubes.")
-    verts, faces, normals, _ = measure.marching_cubes(sdf, level=0)
-
-    logging.stage("Creating mesh.")
-    mesh = o3d.geometry.TriangleMesh()
-    mesh.vertices = o3d.utility.Vector3dVector(verts.astype(np.float64))
-    mesh.triangles = o3d.utility.Vector3iVector(faces.astype(np.int32))
-    mesh.vertex_normals = o3d.utility.Vector3dVector(normals.astype(np.float64))
+    decoder = SdfDecoder(model_path, device)
+    decoder.run(resolution, batch_size)
 
     output_path = generate_output_path(model_path, resolution)
-    o3d.io.write_triangle_mesh(output_path, mesh)
-    logging.stage(f"Mesh was written to {output_path}")
+    decoder.save(output_path)
 
     if visualize:
-        o3d.visualization.draw_geometries([mesh], mesh_show_wireframe=True)
+        decoder.show()
 
 
 if __name__ == "__main__":

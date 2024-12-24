@@ -49,7 +49,7 @@ class ObjResampler:
         self.sampled_vertices = None
         self.sampled_normals = None
 
-    def sample_vertices_and_normals(self, num_samples: int) -> None:
+    def run(self, num_samples: int) -> None:
         """Sample vertices and normals.
 
         TODO(oleg): explore an option to replace this function
@@ -89,7 +89,7 @@ class ObjResampler:
         write_obj(file_path, field_data)
         logging.stage(f"Pointcloud was saved to {file_path}")
 
-    def show_sampled(self):
+    def show(self) -> None:
         """Visualize sampled points and normals with open3d."""
         import open3d as o3d
 
