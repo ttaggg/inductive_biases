@@ -43,4 +43,4 @@ class BaseModel(L.LightningModule):
 
     def on_train_end(self) -> None:
         """Actions to perform after the training is complete."""
-        save_model(self, self.trainer.default_root_dir, self.current_epoch)
+        save_model(self, self.model_cfg.paths.saved_models, self.current_epoch)

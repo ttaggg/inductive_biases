@@ -21,6 +21,12 @@ def normalize_points_and_normals(
             - points (np.ndarray): Points in the (-1, 1) range with the original aspect ratio.
             - normals (np.ndarray): Unit normals.
     """
+
+    # Filter out points with zero normals.
+    correct_normals = np.linalg.norm(normals, axis=-1) != 0.0
+    normals = normals[correct_normals]
+    points = points[correct_normals]
+
     points -= np.mean(points, axis=0, keepdims=True)
     # TODO(oleg): consider normalization without preserving aspect ratio.
     coord_max = np.amax(points)
