@@ -22,11 +22,11 @@ class BaseModel(L.LightningModule):
         self.loss_fn = instantiate(model_cfg.loss)
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        return self.inr(inputs)["output"]
+        outputs = self.inr(inputs)
+        return outputs
 
     def training_step(self, model_inputs: Dict[str, torch.Tensor], _) -> torch.Tensor:
-        model_outputs = self.inr(model_inputs["inputs"])
-        losses = self.loss_fn(model_inputs, model_outputs)
+        losses = self.loss_fn(self.inr, model_inputs)
         loss = torch.stack(list(losses.values())).mean()
         self.log("loss", loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log_dict(losses, on_step=False, on_epoch=True, prog_bar=True)

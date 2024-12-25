@@ -103,9 +103,6 @@ class Siren(nn.Module):
 
         self.net = nn.Sequential(*self.net)
 
-    def forward(self, inputs: torch.Tensor) -> Dict[str, torch.Tensor]:
-        coords = (
-            inputs.clone().detach().requires_grad_(True)
-        )  # allows to take derivative w.r.t. input
-        output = self.net(coords)
-        return {"output": output, "coords": coords}
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        outputs = self.net(inputs)
+        return outputs

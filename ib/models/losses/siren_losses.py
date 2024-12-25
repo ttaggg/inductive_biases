@@ -4,19 +4,20 @@ Adapted from:
 https://github.com/vsitzmann/siren
 """
 
-from typing import Dict, Optional
+from typing import Dict
 
 import torch
 import torch.nn.functional as F
 from torch import nn
 
 
-def compute_gradients(
-    y: torch.Tensor, x: torch.Tensor, grad_outputs: Optional[torch.Tensor] = None
-) -> torch.Tensor:
-    if grad_outputs is None:
-        grad_outputs = torch.ones_like(y)
-    grad = torch.autograd.grad(y, [x], grad_outputs=grad_outputs, create_graph=True)[0]
+def compute_gradients(pred_sdf: torch.Tensor, coords: torch.Tensor) -> torch.Tensor:
+    grad = torch.autograd.grad(
+        pred_sdf,
+        coords,
+        grad_outputs=torch.ones_like(pred_sdf),
+        create_graph=True,
+    )[0]
     return grad
 
 
@@ -29,38 +30,50 @@ class SirenSdfLoss(nn.Module):
 
     def forward(
         self,
+        model: nn.Module,
         model_inputs: Dict[str, torch.Tensor],
-        model_outputs: Dict[str, torch.Tensor],
     ) -> Dict[str, torch.Tensor]:
 
+        coords = model_inputs["inputs"].detach().requires_grad_(True)
         gt_sdf = model_inputs["sdf"]
         gt_normals = model_inputs["normals"]
 
-        coords = model_outputs["coords"]
-        pred_sdf = model_outputs["output"]
+        pred_sdf = model(coords)
 
+        # On / off the surface.
+        on_surface_mask = gt_sdf != -1
+
+        # Gradient constraint.
         gradient = compute_gradients(pred_sdf, coords)
+        grad_constraint = torch.abs(gradient.norm(dim=-1) - 1.0).mean()
 
-        # Wherever boundary_values is not equal to zero,
-        # we interpret it as a boundary constraint.
-        grad_constraint = torch.abs(gradient.norm(dim=-1) - 1)
+        # SDF constraint: only penalize known SDF points:
+        # for points on the surface (mask=True), the constraint is pred_sdf,
+        # for points off the surface (mask=False) it is zero.
+        sdf_constraint = torch.where(
+            on_surface_mask, pred_sdf, torch.zeros_like(pred_sdf)
+        )
+        sdf_constraint = torch.abs(sdf_constraint).mean()
 
-        sdf_constraint = torch.where(gt_sdf != -1, pred_sdf, torch.zeros_like(pred_sdf))
-
+        # Normal constraint: only penalize points on the surface.
         normal_constraint = torch.where(
-            gt_sdf != -1,
+            on_surface_mask,
             1 - F.cosine_similarity(gradient, gt_normals, dim=-1)[..., None],
             torch.zeros_like(gradient[..., :1]),
         )
+        normal_constraint = normal_constraint.mean()
 
+        # "Interior" constraint: for points off the surface (mask=False).
         inter_constraint = torch.where(
-            gt_sdf != -1,
+            on_surface_mask,
             torch.zeros_like(pred_sdf),
             torch.exp(-1e2 * torch.abs(pred_sdf)),
         )
+        inter_constraint = inter_constraint.mean()
+
         return {
-            "grad": grad_constraint.mean() * self.lambda_1,  # 50
-            "sdf": torch.abs(sdf_constraint).mean() * self.lambda_2,  # 3000
-            "normal": normal_constraint.mean() * self.lambda_3,  # 100
-            "inter": inter_constraint.mean() * self.lambda_3,  # 100 or 3000 (?!)
+            "grad": grad_constraint * self.lambda_1,
+            "sdf": sdf_constraint * self.lambda_2,
+            "normal": normal_constraint * self.lambda_3,
+            "inter": inter_constraint * self.lambda_3,
         }
