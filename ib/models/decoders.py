@@ -30,20 +30,18 @@ class SdfDecoder:
 
         # Get mesh.
         sdf = query_model(self.model, resolution, batch_size, self.device)
-        verts, faces, normals, _ = measure.marching_cubes(sdf, level=0)
+        verts, faces, _, _ = measure.marching_cubes(sdf, level=0)
 
         # Create TriangleMesh object.
         self.mesh = o3d.geometry.TriangleMesh()
         self.mesh.vertices = o3d.utility.Vector3dVector(verts.astype(np.float64))
         self.mesh.triangles = o3d.utility.Vector3iVector(faces.astype(np.int32))
-        self.mesh.vertex_normals = o3d.utility.Vector3dVector(
-            normals.astype(np.float64)
-        )
-        logging.stage(f"Mesh contains {len(verts)} vertices and {len(faces)} faces.")
+        self.mesh.compute_vertex_normals()
+        logging.info(f"Mesh contains {len(verts)} vertices and {len(faces)} faces.")
 
     def save(self, file_path: Path) -> None:
         o3d.io.write_triangle_mesh(file_path, self.mesh)
-        logging.stage(f"Mesh was written to {file_path}")
+        logging.info(f"Mesh was written to {file_path}")
 
     def show(self) -> None:
         """Visualize current mesh."""
