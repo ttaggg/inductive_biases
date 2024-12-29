@@ -72,7 +72,7 @@ def initialize_run(ctx: Context) -> DictConfig:
     set logging file, set torch float32 matmul precision."""
 
     # Parse config, initialize directories.
-    with initialize(config_path="../conf", version_base=None):
+    with initialize(config_path="../configs", version_base=None):
         cfg = compose(config_name="config", overrides=ctx.args)
 
     paths = initialize_directories(cfg.output_dir_root, cfg.run_name)

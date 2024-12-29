@@ -1,5 +1,0 @@
-defaults:
-  - dataset: obj_dataset
-
-name: lamp
-file_path: ${oc.env:HOME}/datasets/3d_scenes/lamp/normalized_model_resampled_100000.obj

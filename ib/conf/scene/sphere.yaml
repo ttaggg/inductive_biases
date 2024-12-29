@@ -1,5 +1,0 @@
-defaults:
-  - dataset: obj_dataset
-
-name: sphere
-file_path: ${oc.env:HOME}/datasets/3d_scenes/sphere/wooden_sphere.obj
