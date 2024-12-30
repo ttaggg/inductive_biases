@@ -3,7 +3,7 @@
 import typer
 
 from ib.utils.factory import create_loader, create_model, create_trainer
-from ib.utils.pipeline import initialize_run
+from ib.utils.pipeline import initialize_run, measure_time
 from ib.utils.logging_module import logging
 
 app = typer.Typer(
@@ -13,6 +13,7 @@ app = typer.Typer(
 
 
 @app.command(no_args_is_help=True)
+@measure_time
 def training(ctx: typer.Context) -> None:
     """Run the training.
 

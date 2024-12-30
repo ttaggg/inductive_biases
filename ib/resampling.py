@@ -7,7 +7,7 @@ import typer
 
 from ib.datasets.resamplers import ObjResampler
 from ib.utils.logging_module import logging
-from ib.utils.pipeline import resolve_and_expand_path
+from ib.utils.pipeline import measure_time, resolve_and_expand_path
 
 app = typer.Typer(add_completion=False)
 
@@ -19,6 +19,7 @@ def generate_output_path(file_path: Path, num_samples: int) -> Path:
 
 
 @app.command(no_args_is_help=True)
+@measure_time
 def resampling(
     input_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
     num_samples: Annotated[int, typer.Option(...)],

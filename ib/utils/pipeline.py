@@ -1,6 +1,8 @@
 """General utilities."""
 
+import time
 from datetime import date
+from functools import wraps
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -16,6 +18,29 @@ def resolve_and_expand_path(path: Path) -> Path:
     return path.expanduser().resolve()
 
 
+def measure_time(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        elapsed_time = time.time() - start_time
+
+        hours, remainder = divmod(elapsed_time, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        timing = []
+        if hours > 0:
+            timing.append(f"{int(hours)} hours")
+        if hours > 0 or minutes > 0:
+            timing.append(f"{int(minutes)} minutes")
+        timing.append(f"{seconds:.2f} seconds")
+
+        logging.info(f"Execution time for {func.__name__}: {', '.join(timing)}.")
+        return result
+
+    return wrapper
+
+
 def initialize_directories(output_dir_root: str, run_name: str) -> SimpleNamespace:
     """
     Create a consistent output structure for a new run.
@@ -24,10 +49,12 @@ def initialize_directories(output_dir_root: str, run_name: str) -> SimpleNamespa
     outputs/YY-MM-DD_run_name/
             ├── latest -> version_1
             ├── version_0/
+            |   ├── config.yaml
             |   ├── log_file.txt
             |   ├── lightning_logs/
             |   └── saved_models/
             └── version_1/
+                ├── config.yaml
                 ├── log_file.txt
                 ├── lightning_logs/
                 └── saved_models/

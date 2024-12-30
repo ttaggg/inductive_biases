@@ -7,7 +7,7 @@ import typer
 
 from ib.models.decoders import SdfDecoder
 from ib.utils.logging_module import logging
-from ib.utils.pipeline import resolve_and_expand_path
+from ib.utils.pipeline import measure_time, resolve_and_expand_path
 
 app = typer.Typer(add_completion=False)
 
@@ -19,6 +19,7 @@ def generate_output_path(model_path: Path, resolution: int) -> str:
 
 
 @app.command(no_args_is_help=True)
+@measure_time
 def decoding(
     model_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
     resolution: int = 512,
