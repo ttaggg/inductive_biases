@@ -1,0 +1,6 @@
+_target_: ib.models.inrs.relu_pe.ReluPe
+in_features: 3
+out_features: 1
+hidden_features: 256
+hidden_layers: 3
+num_frequencies: 10

@@ -28,7 +28,7 @@ def create_loader(dataset_cfg: DictConfig, trainer_cfg: DictConfig) -> DataLoade
     data_loader = DataLoader(
         dataset,
         shuffle=True,
-        batch_size=1,
+        batch_size=None,
         num_workers=trainer_cfg.num_workers,
         persistent_workers=trainer_cfg.persistent_workers,
         **kwargs,
