@@ -37,11 +37,17 @@ class LinearBlock(nn.Module):
         super().__init__()
         self.linear = nn.Linear(in_features, out_features)
         self.activation = nn.ReLU()
+        self.init_weights()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.linear(x)
         x = self.activation(x)
         return x
+
+    def init_weights(self) -> None:
+        nn.init.kaiming_normal_(
+            self.linear.weight, a=0.0, nonlinearity="relu", mode="fan_in"
+        )
 
 
 class ReluPe(nn.Module):
@@ -66,7 +72,7 @@ class ReluPe(nn.Module):
 
         self.net = nn.Sequential(*layers)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.pos_encoding(x)
-        x = self.net(x)
-        return x
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        x = self.pos_encoding(inputs)
+        outputs = self.net(x)
+        return outputs
