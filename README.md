@@ -16,43 +16,40 @@ uv will automatically install all dependencies after the first `uv run ...` comm
 
 ```bash
 # uv run training [HYDRA-OVERRIDES, scene is required]
-uv run training scene=thai_statue run_name=first_try
+uv run training scene=thai_statue inr=siren trainer.batch_size=250000
 ```
 
 ## Exporting INR to mesh
 
 ```bash
-# uv run decoding --model-path=[MODEL_PATH]
+# uv run decoding --help
 uv run decoding  --model-path=model_epoch_9000.pt --device=cpu --resolution=64
 ```
 
 ## Resampling pointcloud from the OBJ mesh
 
 ```bash
-# uv run resampling --input-path=[INPUT_OBJ] --num-samples=[NUM_SAMPLES]
-uv run resampling  --input-path=<normalized_model.obj --num-samples=1000000
+# uv run resampling --help
+uv run resampling  --input-path=normalized_model.obj --num-samples=1000000
 ```
 
 ## Hydra config's layout
 
 ```
-ib/conf
+ib/configs
 ├── config.yaml
+├── inr
+│   ├── relu_pe.yaml
+│   └── siren.yaml
+├── loss
+│   └── siren_sdf_loss.yaml
 ├── model
-│   ├── inr
-│   │   └── siren.yaml
-│   ├── loss
-│   │   └── siren_sdf_loss.yaml
-│   └── original_siren.yaml
+│   └── base_model.yaml
 ├── scene
-│   ├── bedroom_1.yaml
 │   ├── dataset
 │   │   ├── obj_dataset.yaml
 │   │   └── xyz_dataset.yaml
-│   ├── lamp.yaml
-│   ├── siren_room.yaml
-│   ├── sofa.yaml
-│   ├── sphere.yaml
+│   ├── interior_room.yaml
 │   └── thai_statue.yaml
 └── trainer
     └── base_trainer.yaml

@@ -27,11 +27,8 @@ def decoding(
     device: str = "cuda",
     visualize: bool = False,
 ) -> None:
-    """Export encoded in the INR shape to mesh.
+    """Export encoded in the INR shape to mesh."""
 
-    uv run decoding --model-path=[MODEL_PATH] --device=[DEVICE]
-        --resolution=[SDF_RESOLUTION] --visualize=[OPEN3D_VIS]
-    """
     logging.stage("Running export to a mesh.")
 
     decoder = SdfDecoder(model_path, device)

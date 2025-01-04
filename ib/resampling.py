@@ -25,10 +25,7 @@ def resampling(
     num_samples: Annotated[int, typer.Option(...)],
     visualize: bool = False,
 ) -> None:
-    """Resample pointcloud vertices.
-
-    uv run resampling --input-path=[INPUT_OBJ] --num-samples=[NUM_SAMPLES]
-    """
+    """Resample pointcloud vertices."""
 
     logging.stage("Running resampling.")
 
