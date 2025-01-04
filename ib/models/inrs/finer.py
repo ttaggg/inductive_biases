@@ -1,7 +1,7 @@
-"""Siren architecture.
+"""FINER architecture.
 
-Copied from:
-https://github.com/vsitzmann/siren
+Adapted from:
+https://github.com/liuzhen0212/FINERplusplus
 """
 
 import numpy as np
@@ -9,17 +9,12 @@ import torch
 from torch import nn
 
 
-class SineLayer(nn.Module):
-    """# See paper sec. 3.2, final paragraph, and supplement Sec. 1.5 for discussion of omega_0.
+@torch.no_grad()
+def generate_alpha(x: torch.Tensor) -> torch.Tensor:
+    return torch.abs(x) + 1
 
-    # If is_first=True, omega_0 is a frequency factor which simply multiplies the activations before the
-    # nonlinearity. Different signals may require different omega_0 in the first layer - this is a
-    # hyperparameter.
 
-    # If is_first=False, then the weights will be divided by omega_0 so as to keep the magnitude of
-    # activations constant, but boost gradients to the weight matrix (see supplement Sec. 1.5)
-    """
-
+class FinerLayer(nn.Module):
     def __init__(
         self,
         in_features: int,
@@ -27,10 +22,10 @@ class SineLayer(nn.Module):
         bias: bool = True,
         is_first: bool = False,
         is_last: bool = False,
-        omega_0: float = 30.0,
+        omega: int = 30,
     ) -> None:
         super().__init__()
-        self.omega_0 = omega_0
+        self.omega = omega
         self.is_first = is_first
         self.is_last = is_last
         self.in_features = in_features
@@ -43,55 +38,54 @@ class SineLayer(nn.Module):
                 self.linear.weight.uniform_(-1 / self.in_features, 1 / self.in_features)
             else:
                 self.linear.weight.uniform_(
-                    -np.sqrt(6 / self.in_features) / self.omega_0,
-                    np.sqrt(6 / self.in_features) / self.omega_0,
+                    -np.sqrt(6 / self.in_features) / self.omega,
+                    np.sqrt(6 / self.in_features) / self.omega,
                 )
 
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
+    def forward(self, input):
         x = self.linear(input)
         if self.is_last:
             return x
-        return torch.sin(self.omega_0 * x)
+        return torch.sin(self.omega * generate_alpha(x) * x)
 
 
-class Siren(nn.Module):
+class Finer(nn.Module):
     def __init__(
         self,
         in_features: int,
         hidden_features: int,
         hidden_layers: int,
         out_features: int,
-        first_omega_0: float = 30.0,
-        hidden_omega_0: float = 30.0,
+        first_omega: float = 30.0,
+        hidden_omega: float = 30.0,
     ) -> None:
         super().__init__()
 
         layers = []
         layers.append(
-            SineLayer(
+            FinerLayer(
                 in_features,
                 hidden_features,
                 is_first=True,
-                omega_0=first_omega_0,
+                omega=first_omega,
             )
         )
         for _ in range(hidden_layers):
             layers.append(
-                SineLayer(
+                FinerLayer(
                     hidden_features,
                     hidden_features,
-                    omega_0=hidden_omega_0,
+                    omega=hidden_omega,
                 )
             )
         layers.append(
-            SineLayer(
+            FinerLayer(
                 hidden_features,
                 out_features,
                 is_last=True,
-                omega_0=hidden_omega_0,
+                omega=hidden_omega,
             )
         )
-
         self.net = nn.Sequential(*layers)
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
