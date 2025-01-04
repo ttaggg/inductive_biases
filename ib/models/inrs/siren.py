@@ -56,21 +56,23 @@ class Siren(nn.Module):
         hidden_features: int,
         hidden_layers: int,
         out_features: int,
-        outermost_linear: bool = False,
         first_omega_0: float = 30.0,
         hidden_omega_0: float = 30.0,
     ) -> None:
         super().__init__()
 
-        self.net = []
-        self.net.append(
+        layers = []
+        layers.append(
             SineLayer(
-                in_features, hidden_features, is_first=True, omega_0=first_omega_0
+                in_features,
+                hidden_features,
+                is_first=True,
+                omega_0=first_omega_0,
             )
         )
 
-        for i in range(hidden_layers):
-            self.net.append(
+        for _ in range(hidden_layers):
+            layers.append(
                 SineLayer(
                     hidden_features,
                     hidden_features,
@@ -79,27 +81,15 @@ class Siren(nn.Module):
                 )
             )
 
-        if outermost_linear:
-            final_linear = nn.Linear(hidden_features, out_features)
-
-            with torch.no_grad():
-                final_linear.weight.uniform_(
-                    -np.sqrt(6 / hidden_features) / hidden_omega_0,
-                    np.sqrt(6 / hidden_features) / hidden_omega_0,
-                )
-
-            self.net.append(final_linear)
-        else:
-            self.net.append(
-                SineLayer(
-                    hidden_features,
-                    out_features,
-                    is_first=False,
-                    omega_0=hidden_omega_0,
-                )
+        final_linear = nn.Linear(hidden_features, out_features)
+        with torch.no_grad():
+            final_linear.weight.uniform_(
+                -np.sqrt(6 / hidden_features) / hidden_omega_0,
+                np.sqrt(6 / hidden_features) / hidden_omega_0,
             )
+        layers.append(final_linear)
 
-        self.net = nn.Sequential(*self.net)
+        self.net = nn.Sequential(*layers)
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         outputs = self.net(inputs)
