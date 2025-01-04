@@ -47,8 +47,8 @@ class SineLayer(nn.Module):
                     np.sqrt(6 / self.in_features) / self.omega_0,
                 )
 
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
-        x = self.linear(input)
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        x = self.linear(inputs)
         if self.is_last:
             return x
         return torch.sin(self.omega_0 * x)

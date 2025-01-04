@@ -42,8 +42,8 @@ class FinerLayer(nn.Module):
                     np.sqrt(6 / self.in_features) / self.omega,
                 )
 
-    def forward(self, input):
-        x = self.linear(input)
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        x = self.linear(inputs)
         if self.is_last:
             return x
         return torch.sin(self.omega * generate_alpha(x) * x)
