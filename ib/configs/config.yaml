@@ -1,11 +1,16 @@
 # Defaults.
 defaults:
-  - _self_
+  # Scene is required.
   - scene: ???
-  - model: original_siren
+  - inr: siren
+  - loss: siren_sdf_loss
+  # Only base variants.
   - trainer: base_trainer
+  - model: base_model
+  # Disable logs from Hydra.
   - override hydra/hydra_logging: disabled
   - override hydra/job_logging: disabled
+  - _self_
 
 # Global flags.
 run_name: default

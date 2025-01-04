@@ -38,11 +38,10 @@ def create_loader(dataset_cfg: DictConfig, trainer_cfg: DictConfig) -> DataLoade
 
 def create_model(model_cfg: DictConfig) -> nn.Module:
     """Get an appropriate model."""
-
-    if model_cfg.name == "siren_original":
-        return BaseModel(model_cfg)
-
-    raise ValueError(f"Unknown model was given: {model_cfg.name}.")
+    inr = instantiate(model_cfg.inr)
+    loss_fn = instantiate(model_cfg.loss)
+    model = BaseModel(inr, loss_fn, model_cfg)
+    return model
 
 
 def create_trainer(trainer_cfg: DictConfig) -> L.Trainer:

@@ -1,12 +1,11 @@
 """Base models for INR training."""
 
-import os
 from typing import Dict
 
 import lightning as L
 import torch
-from hydra.utils import instantiate
 from omegaconf import DictConfig
+from torch import nn
 from torch.optim import Optimizer
 
 from ib.utils.model import save_model
@@ -15,11 +14,16 @@ from ib.utils.model import save_model
 class BaseModel(L.LightningModule):
     """Base model for INR training."""
 
-    def __init__(self, model_cfg: DictConfig) -> None:
+    def __init__(
+        self,
+        inr: nn.Module,
+        loss_fn: nn.Module,
+        model_cfg: DictConfig,
+    ) -> None:
         super().__init__()
+        self.inr = inr
+        self.loss_fn = loss_fn
         self.model_cfg = model_cfg
-        self.inr = instantiate(model_cfg.inr)
-        self.loss_fn = instantiate(model_cfg.loss)
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         outputs = self.inr(inputs)

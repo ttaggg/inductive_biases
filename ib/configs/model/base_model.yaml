@@ -1,0 +1,6 @@
+# Wrap external configs.
+inr: ${inr}
+loss: ${loss}
+lr: ${trainer.lr}
+save_model_every_n_epochs: ${trainer.save_model_every_n_epochs}
+paths: ${paths}
