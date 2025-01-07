@@ -12,6 +12,7 @@ dependencies = [
     "open3d>=0.18.0",
     "rich>=13.9.4",
     "scikit-image>=0.25.0",
+    "scipy>=1.14.1",
     "tensorboard>=2.18.0",
     "torch==2.5.1",
     "typer>=0.15.1",
@@ -21,6 +22,7 @@ dependencies = [
 package = true
 
 [project.scripts]
-training = "ib.training:app"
 decoding = "ib.decoding:app"
+evaluation = "ib.evaluation:app"
 resampling = "ib.resampling:app"
+training = "ib.training:app"
