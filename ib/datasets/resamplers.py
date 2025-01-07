@@ -29,25 +29,30 @@ def sample_point_in_triangle(v0, v1, v2):
     return u * v0 + v * v1 + w * v2
 
 
-class ObjResampler:
-    """Resample points on OBJ mesh.
-
+class Resampler:
+    """Resample points on mesh.
 
     NOTE(oleg): this implementation assumes that:
         1. faces are positive indices (starting from 1)
         2. vertices in a face are ordered counterclockwise (CCW)
     """
 
-    def __init__(self, file_path: str) -> None:
-        self.vertices, self.faces = load_obj(
+    def __init__(self, vertices: np.ndarray, faces: np.ndarray) -> None:
+        self.vertices = vertices
+        self.faces = faces
+        self.sampled_vertices = None
+        self.sampled_normals = None
+
+    @classmethod
+    def from_obj_file(cls, file_path: Path):
+        vertices, faces = load_obj(
             file_path,
             {
                 "v": float,  # Vertices.
                 "f": lambda x: int(x.split("/")[0]) - 1,  # Faces.
             },
         )
-        self.sampled_vertices = None
-        self.sampled_normals = None
+        return cls(vertices, faces)
 
     def run(self, num_samples: int) -> None:
         """Sample vertices and normals.

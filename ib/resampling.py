@@ -5,7 +5,7 @@ from typing_extensions import Annotated
 
 import typer
 
-from ib.datasets.resamplers import ObjResampler
+from ib.datasets.resamplers import Resampler
 from ib.utils.logging_module import logging
 from ib.utils.pipeline import measure_time, resolve_and_expand_path
 
@@ -29,7 +29,7 @@ def resampling(
 
     logging.stage("Running resampling.")
 
-    resampler = ObjResampler(input_path)
+    resampler = Resampler.from_obj_file(input_path)
     resampler.run(num_samples)
 
     output_path = generate_output_path(input_path, num_samples)
