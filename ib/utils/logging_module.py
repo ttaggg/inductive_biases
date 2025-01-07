@@ -82,7 +82,7 @@ class LoggingModule:
         """Log notices."""
         self._write(inputs, color="green", newline=True, level="INFO")
 
-    def panel(self, inputs: str, title: str = "") -> None:
+    def panel(self, title: str, inputs: str) -> None:
         """Log panels using _write for consistent handling."""
         pl = Panel(inputs, title=title, expand=False, highlight=True)
         self._write(pl, level="INFO")

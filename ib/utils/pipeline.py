@@ -109,10 +109,10 @@ def initialize_run(ctx: Context) -> DictConfig:
     logging.set_log_file(cfg.paths.version)
 
     # Beautiful panel with configuration.
-    logging.panel(OmegaConf.to_yaml(cfg), title="Configuration")
+    logging.panel("Configuration", OmegaConf.to_yaml(cfg))
     logging.panel(
+        "Outputs",
         f"Output directory: {cfg.paths.version} \nLogs: {logging.log_file_path}",
-        title="Outputs",
     )
     OmegaConf.save(config=cfg, f=cfg.paths.version / "config.yaml")
 
