@@ -2,6 +2,7 @@
 
 import numpy as np
 from pathlib import Path
+from typing import Optional, Tuple
 
 from ib.utils.data import load_obj, write_obj
 from ib.utils.logging_module import logging
@@ -35,11 +36,12 @@ class Resampler:
     NOTE(oleg): this implementation assumes that:
         1. faces are positive indices (starting from 1)
         2. vertices in a face are ordered counterclockwise (CCW)
+        3. number of samples is bigger or equal to number of faces
     """
 
     def __init__(self, vertices: np.ndarray, faces: np.ndarray) -> None:
-        self.vertices = vertices
-        self.faces = faces
+        self.vertices = vertices.astype(np.float32)
+        self.faces = faces.astype(np.int32)
         self.sampled_vertices = None
         self.sampled_normals = None
 
@@ -61,6 +63,7 @@ class Resampler:
             with mesh.sample_points_uniformly() from open3d.
         """
         logging.stage("Sampling vertices and normals.")
+        assert num_samples >= len(self.faces)
 
         # We sample based on the area.
         face_areas = np.array(
@@ -74,20 +77,59 @@ class Resampler:
             ]
         )
         face_probs = face_areas / face_areas.sum()
-        sampled_faces = np.random.choice(
-            len(self.faces), size=num_samples, p=face_probs
+
+        # Step 1: Sample one point per face.
+        per_face_points, per_face_normals = self.sample_points_normals_from_faces(
+            num_samples=len(self.faces),
+            face_probs=None,
         )
 
-        # Assign normal from the face to the new vertex.
-        self.sampled_vertices = np.empty(shape=(num_samples, 3))
-        self.sampled_normals = np.empty(shape=(num_samples, 3))
+        # Step 1: Sample one point per face.
+        per_face_points2, per_face_normals2 = self.sample_points_normals_from_faces(
+            num_samples=len(self.faces),
+            face_probs=None,
+        )
+
+        # Step 2: Sample additional points proportionally to face areas.
+        additional_samples = num_samples - len(self.faces) - len(self.faces)
+        additional_points, additional_normals = self.sample_points_normals_from_faces(
+            num_samples=additional_samples,
+            face_probs=face_probs,
+        )
+
+        self.sampled_vertices = np.concatenate(
+            (per_face_points, per_face_points2, additional_points)
+        )
+        self.sampled_normals = np.concatenate(
+            (per_face_normals, per_face_normals2, additional_normals)
+        )
+
+    def sample_points_normals_from_faces(
+        self,
+        num_samples: int,
+        face_probs: Optional[np.ndarray] = None,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Helper function to sample points and normals from faces."""
+
+        if face_probs is None:
+            sampled_faces = range(len(self.faces))
+        else:
+            sampled_faces = np.random.choice(
+                len(self.faces), size=num_samples, p=face_probs
+            )
+
+        sampled_points = np.empty((num_samples, 3), dtype=np.float32)
+        sampled_normals = np.empty((num_samples, 3), dtype=np.float32)
+
         for i, face_idx in enumerate(sampled_faces):
             v0, v1, v2 = self.vertices[self.faces[face_idx]]
-            self.sampled_vertices[i] = sample_point_in_triangle(v0, v1, v2)
-            self.sampled_normals[i] = compute_face_normal(v0, v1, v2)
+            sampled_points[i] = sample_point_in_triangle(v0, v1, v2)
+            sampled_normals[i] = compute_face_normal(v0, v1, v2)
 
             if i % int(num_samples * 0.1) == 0:
-                logging.info(f"{i} / {num_samples} steps are done.")
+                logging.info(f"Sampling: {i} / {num_samples} steps done.")
+
+        return sampled_points, sampled_normals
 
     def save(self, file_path: Path) -> None:
         field_data = {"v": self.sampled_vertices, "vn": self.sampled_normals}
