@@ -22,8 +22,11 @@ def normalize_points_and_normals(
             - normals (np.ndarray): Unit normals.
     """
 
-    # Filter out points with zero normals.
-    correct_normals = np.linalg.norm(normals, axis=-1) != 0.0
+    # Filter out invalid points of points with zero normals.
+    correct_normals = np.logical_and(
+        np.linalg.norm(normals, axis=-1) != 0.0,
+        np.all(np.isfinite(normals), axis=-1),
+    )
     normals = normals[correct_normals]
     points = points[correct_normals]
 
