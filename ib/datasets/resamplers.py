@@ -8,6 +8,10 @@ from ib.utils.data import load_obj, write_obj
 from ib.utils.logging_module import logging
 
 
+class SamplingException(Exception):
+    """Raise sampling exception."""
+
+
 def compute_face_normal(v0, v1, v2):
     """Compute the normal of a triangle face given its 3 vertices."""
     normal = np.cross(v1 - v0, v2 - v0)
@@ -63,7 +67,11 @@ class Resampler:
             with mesh.sample_points_uniformly() from open3d.
         """
         logging.stage("Sampling vertices and normals.")
-        assert num_samples >= len(self.faces)
+        if 2 * len(self.faces) > num_samples:
+            raise SamplingException(
+                f"Number of samples {num_samples} is fewer than "
+                f"number of faces {len(self.faces)} x 2."
+            )
 
         # We sample based on the area.
         face_areas = np.array(
@@ -84,13 +92,13 @@ class Resampler:
             face_probs=None,
         )
 
-        # Step 1: Sample one point per face.
+        # Step 2: Sample one point per face.
         per_face_points2, per_face_normals2 = self.sample_points_normals_from_faces(
             num_samples=len(self.faces),
             face_probs=None,
         )
 
-        # Step 2: Sample additional points proportionally to face areas.
+        # Step 3: Sample additional points proportionally to face areas.
         additional_samples = num_samples - len(self.faces) - len(self.faces)
         additional_points, additional_normals = self.sample_points_normals_from_faces(
             num_samples=additional_samples,
