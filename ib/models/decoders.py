@@ -30,7 +30,8 @@ class SdfDecoder:
 
         # Get mesh.
         sdf = query_model(self.model, resolution, batch_size, self.device)
-        verts, faces, _, _ = measure.marching_cubes(sdf, level=0)
+        spacing = (1.0 / resolution, 1.0 / resolution, 1.0 / resolution)
+        verts, faces, _, _ = measure.marching_cubes(sdf, level=0, spacing=spacing)
 
         # Create TriangleMesh object.
         self.mesh = o3d.geometry.TriangleMesh()
