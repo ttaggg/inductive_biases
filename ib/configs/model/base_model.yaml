@@ -3,4 +3,6 @@ inr: ${inr}
 loss: ${loss}
 lr: ${trainer.lr}
 save_model_every_n_epochs: ${trainer.save_model_every_n_epochs}
+eval_model_every_n_epochs: ${trainer.eval_model_every_n_epochs}
+evaluator: ${evaluator}
 paths: ${paths}

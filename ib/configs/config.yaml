@@ -7,6 +7,7 @@ defaults:
   # Only base variants.
   - trainer: base_trainer
   - model: base_model
+  - evaluator: base_evaluator
   # Disable logs from Hydra.
   - override hydra/hydra_logging: disabled
   - override hydra/job_logging: disabled

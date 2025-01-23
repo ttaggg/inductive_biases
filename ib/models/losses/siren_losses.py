@@ -72,8 +72,8 @@ class SirenSdfLoss(nn.Module):
         inter_constraint = inter_constraint.mean()
 
         return {
-            "grad": grad_constraint * self.lambda_1,
-            "sdf": sdf_constraint * self.lambda_2,
-            "normal": normal_constraint * self.lambda_3,
-            "inter": inter_constraint * self.lambda_3,
+            "losses/grad": grad_constraint * self.lambda_1,
+            "losses/sdf": sdf_constraint * self.lambda_2,
+            "losses/normal": normal_constraint * self.lambda_3,
+            "losses/inter": inter_constraint * self.lambda_3,
         }

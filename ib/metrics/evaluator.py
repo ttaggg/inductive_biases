@@ -1,12 +1,9 @@
 """Evaluator class."""
 
 from enum import Enum
-from typing import Union
 from pathlib import Path
 
-import torch
 from skimage import measure
-from torch import nn
 
 from ib.datasets.resamplers import Resampler
 from ib.metrics.chamfer_distance import ChamferDistance
@@ -19,45 +16,23 @@ class Metric(str, Enum):
 
 class Evaluator:
 
-    def __init__(
-        self,
-        model: nn.Module,
-        pointcloud_path: Path,
-        device: str,
-    ) -> None:
+    def __init__(self, pointcloud_path: Path) -> None:
+        # TODO(oleg): initialize Chamfer distance class only when needed.
+        self.chamfer = ChamferDistance(pointcloud_path)
 
-        self.model = model
-        # TODO(oleg): if used from the BaseModel during validation,
-        # check if the model switches to the train mode after.
-        self.model.eval()
-        self.device = device
-
-        self.metrics_dict = {
-            Metric.chamfer: ChamferDistance(pointcloud_path),
-        }
-
-    @classmethod
-    def from_checkpoint(
-        cls,
-        model_path: Path,
-        pointcloud_path: Path,
-        device: str,
-    ):
-        model = torch.load(model_path, weights_only=False, map_location=device)
-        return cls(model, pointcloud_path, device)
-
-    def run(self, metric_names, resolution: int, batch_size: int):
+    def run(self, model, metric_names, resolution: int, batch_size: int):
+        is_training = model.training
+        model.eval()
 
         # Run once for all the metrics.
-        sdf = query_model(self.model, resolution, batch_size, self.device)
+        sdf = query_model(model, resolution, batch_size, model.device)
 
         results = {}
         if Metric.chamfer in metric_names:
             vertices, faces, _, _ = measure.marching_cubes(sdf, level=0)
             resampler = Resampler(vertices, faces)
-            resampler.run(num_samples=1_000_000)
-            results["chamfer"] = self.metrics_dict[Metric.chamfer](
-                resampler.sampled_vertices
-            )
+            resampler.run(num_samples=max(1_000_000, 2 * len(faces)))
+            results["metrics/chamfer"] = self.chamfer(resampler.sampled_vertices)
 
+        model.train(is_training)
         return results

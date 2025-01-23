@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List
 from typing_extensions import Annotated
 
+import torch
 import typer
 
 from ib.utils.logging_module import logging
@@ -30,8 +31,11 @@ def evaluation(
 
     logging.stage("Running evaluation.")
 
-    evaluator = Evaluator.from_checkpoint(model_path, pointcloud_path, device)
-    results = evaluator.run(metric, resolution, batch_size)
+    model = torch.load(model_path, weights_only=False, map_location=device)
+    model.to(device)
+
+    evaluator = Evaluator(pointcloud_path)
+    results = evaluator.run(model, metric, resolution, batch_size)
 
     logging.panel("Results", yaml.dump(results))
 

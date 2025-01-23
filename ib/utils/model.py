@@ -41,6 +41,7 @@ def query_model(
     batch_size: int,
     device: str,
 ) -> np.array:
+    logging.stage("Querying the model.")
 
     grid_size = (resolution, resolution, resolution)
     coords = make_coordinates(grid_size=grid_size)

@@ -3,7 +3,7 @@ num_workers: 8
 persistent_workers: True
 accelerator: gpu
 devices: 1
-float32_matmul_precision: highest
+float32_matmul_precision: high
 
 # Training
 max_epochs: 20000
@@ -11,6 +11,7 @@ batch_size: 150000
 lr: 1e-4
 gradient_clip_val: 1.0
 save_model_every_n_epochs: 500
+eval_model_every_n_epochs: 500
 
 # Debug
 limit_train_batches: null

@@ -1,0 +1,5 @@
+file_path: ${scene.file_path}
+batch_size: ${trainer.batch_size}
+resolution: 512
+metric_names:
+    - chamfer
