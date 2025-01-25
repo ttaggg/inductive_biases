@@ -1,14 +1,18 @@
 """General utilities."""
 
+import os
+import random
 import time
 from datetime import date
 from functools import wraps
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
 import torch
-from typer import Context
 from hydra import initialize, compose
+from lightning.pytorch import seed_everything
+from typer import Context
 from omegaconf import OmegaConf, DictConfig
 
 from ib.utils.logging_module import logging
@@ -39,6 +43,23 @@ def measure_time(func):
         return result
 
     return wrapper
+
+
+def set_seed(seed: int = 42) -> None:
+    # Python
+    random.seed(seed)
+    # NumPy
+    np.random.seed(seed)
+    # PyTorch
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    # Environment
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    # PyTorch Lightning
+    seed_everything(seed, workers=True)
 
 
 def initialize_directories(output_dir_root: str, run_name: str) -> SimpleNamespace:
@@ -96,7 +117,7 @@ def initialize_directories(output_dir_root: str, run_name: str) -> SimpleNamespa
 
 def initialize_run(ctx: Context) -> DictConfig:
     """Load Hydra configs, initialize output directory,
-    set logging file, set torch float32 matmul precision."""
+    set logging file, set torch float32 matmul precision, set seed."""
 
     # Parse config, initialize directories.
     with initialize(config_path="../configs", version_base=None):
@@ -119,5 +140,9 @@ def initialize_run(ctx: Context) -> DictConfig:
     # Also set float32_matmul_precision.
     # TODO(oleg): maybe remove this part, it does not belong here.
     torch.set_float32_matmul_precision(cfg.trainer.float32_matmul_precision)
+
+    # Set seed.
+    if cfg.trainer.seed is not None:
+        set_seed(cfg.trainer.seed)
 
     return cfg
