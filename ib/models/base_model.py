@@ -47,10 +47,16 @@ class BaseModel(L.LightningModule):
 
     def on_train_epoch_end(self) -> None:
         """Actions to make in the end of epoch."""
-        if self.current_epoch % self.model_cfg.save_model_every_n_epochs == 0:
+        if (
+            self.current_epoch > 0
+            and self.current_epoch % self.model_cfg.save_model_every_n_epochs == 0
+        ):
             save_model(self, self.model_cfg.paths.saved_models, self.current_epoch)
 
-        if self.current_epoch % self.model_cfg.eval_model_every_n_epochs == 0:
+        if (
+            self.current_epoch > 0
+            and self.current_epoch % self.model_cfg.eval_model_every_n_epochs == 0
+        ):
             self.evaluate()
 
     def on_train_end(self) -> None:
