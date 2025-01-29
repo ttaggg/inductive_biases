@@ -72,4 +72,8 @@ class BaseModel(L.LightningModule):
             resolution=self.eval_cfg.resolution,
             batch_size=self.eval_cfg.batch_size,
         )
-        self.log_dict(results, on_step=False, on_epoch=True, prog_bar=True)
+        # Log results using self.logger.experiment, because direct use of log_dict()
+        # is not possible in on_train_end.
+        if self.logger:
+            for key, value in results.items():
+                self.logger.experiment.add_scalar(key, value, self.current_epoch)
