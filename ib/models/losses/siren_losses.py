@@ -35,13 +35,10 @@ class SirenSdfLoss(nn.Module):
     ) -> Dict[str, torch.Tensor]:
 
         coords = model_inputs["inputs"].detach().requires_grad_(True)
-        gt_sdf = model_inputs["sdf"]
+        on_surface_mask = model_inputs["sdf"]
         gt_normals = model_inputs["normals"]
 
         pred_sdf = model(coords)
-
-        # On / off the surface.
-        on_surface_mask = gt_sdf != -1
 
         # Gradient constraint.
         gradient = compute_gradients(pred_sdf, coords)

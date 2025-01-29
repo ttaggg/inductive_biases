@@ -35,12 +35,14 @@ class PointCloudDataset(Dataset):
 
         off_points = np.random.uniform(-1, 1, size=(off_num_samples, 3))
         off_normals = -1 * np.ones_like(off_points)
-        off_sdf = -1 * np.ones(shape=(off_num_samples, 1))
+        off_sdf = np.full((off_num_samples, 1), False)
 
-        rand_idx = np.random.choice(len(self.points), size=on_num_samples)
+        rand_idx = np.random.choice(
+            len(self.points), size=on_num_samples, replace=False
+        )
         on_points = self.points[rand_idx]
         on_normals = self.normals[rand_idx]
-        on_sdf = np.ones(shape=(on_num_samples, 1))
+        on_sdf = np.full((on_num_samples, 1), True)
 
         points = np.concatenate([off_points, on_points], axis=0)
         normals = np.concatenate([off_normals, on_normals], axis=0)
@@ -49,7 +51,7 @@ class PointCloudDataset(Dataset):
         return {
             "inputs": points.astype(np.float32),
             "normals": normals.astype(np.float32),
-            "sdf": sdf.astype(np.float32),
+            "sdf": sdf,
         }
 
     def __len__(self) -> int:
