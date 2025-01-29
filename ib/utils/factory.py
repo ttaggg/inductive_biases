@@ -3,13 +3,13 @@
 import lightning as L
 from hydra.utils import instantiate
 from lightning.pytorch.callbacks import LearningRateMonitor
-from lightning.pytorch.loggers import TensorBoardLogger
 from omegaconf import DictConfig
 from torch import nn
 from torch.utils.data import DataLoader
 
 from ib.models.base_model import BaseModel
 from ib.utils.logging_module import logging
+from ib.utils.tensorboard import CustomTensorBoardLogger
 
 
 def create_loader(dataset_cfg: DictConfig, trainer_cfg: DictConfig) -> DataLoader:
@@ -54,7 +54,7 @@ def create_trainer(trainer_cfg: DictConfig) -> L.Trainer:
         max_epochs=trainer_cfg.max_epochs,
         gradient_clip_val=trainer_cfg.gradient_clip_val,
         # Callbacks and loggers.
-        logger=TensorBoardLogger(
+        logger=CustomTensorBoardLogger(
             save_dir=trainer_cfg.paths.lightning_logs, name="", version=""
         ),
         callbacks=[LearningRateMonitor(logging_interval="epoch")],
