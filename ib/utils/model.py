@@ -21,9 +21,25 @@ def make_coordinates(
     coord_range: Tuple[int, int] = (-1.0, 1.0),
 ) -> torch.Tensor:
 
-    x_coords = np.linspace(coord_range[0], coord_range[1], grid_size[0])
-    y_coords = np.linspace(coord_range[0], coord_range[1], grid_size[1])
-    z_coords = np.linspace(coord_range[0], coord_range[1], grid_size[2])
+    x_coords = np.linspace(
+        coord_range[0],
+        coord_range[1],
+        grid_size[0],
+        dtype=np.float32,
+    )
+    y_coords = np.linspace(
+        coord_range[0],
+        coord_range[1],
+        grid_size[1],
+        dtype=np.float32,
+    )
+    z_coords = np.linspace(
+        coord_range[0],
+        coord_range[1],
+        grid_size[2],
+        dtype=np.float32,
+    )
+
     x_coords, y_coords, z_coords = np.meshgrid(
         x_coords, y_coords, z_coords, indexing="ij"
     )
@@ -31,7 +47,7 @@ def make_coordinates(
     y_coords = y_coords.flatten()
     z_coords = z_coords.flatten()
     coords = np.stack([x_coords, y_coords, z_coords]).T
-    return torch.from_numpy(coords.astype(np.float32))
+    return torch.from_numpy(coords)
 
 
 @torch.no_grad()
