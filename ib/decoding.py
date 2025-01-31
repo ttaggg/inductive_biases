@@ -7,15 +7,13 @@ import typer
 
 from ib.models.decoders import SdfDecoder
 from ib.utils.logging_module import logging
-from ib.utils.pipeline import measure_time, resolve_and_expand_path
+from ib.utils.pipeline import (
+    generate_output_mesh_path,
+    measure_time,
+    resolve_and_expand_path,
+)
 
 app = typer.Typer(add_completion=False)
-
-
-def generate_output_path(model_path: Path, resolution: int) -> str:
-    meshes_dir = model_path.parents[1] / "meshes"
-    meshes_dir.mkdir(parents=True, exist_ok=True)
-    return str(meshes_dir / f"mesh_{model_path.stem}_res_{resolution}.ply")
 
 
 @app.command(no_args_is_help=True)
@@ -31,10 +29,10 @@ def decoding(
 
     logging.stage("Running export to a mesh.")
 
-    decoder = SdfDecoder(model_path, device)
+    decoder = SdfDecoder.from_model_path(model_path, device)
     decoder.run(resolution, batch_size)
 
-    output_path = generate_output_path(model_path, resolution)
+    output_path = generate_output_mesh_path(model_path, resolution)
     decoder.save(output_path)
 
     if visualize:

@@ -22,6 +22,12 @@ def resolve_and_expand_path(path: Path) -> Path:
     return path.expanduser().resolve()
 
 
+def generate_output_mesh_path(model_path: Path, resolution: int) -> str:
+    meshes_dir = model_path.parents[1] / "meshes"
+    meshes_dir.mkdir(parents=True, exist_ok=True)
+    return str(meshes_dir / f"mesh_{model_path.stem}_res_{resolution}.ply")
+
+
 def measure_time(func):
     @wraps(func)
     def wrapper(*args, **kwargs):

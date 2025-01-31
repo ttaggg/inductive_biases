@@ -1,5 +1,6 @@
 file_path: ${scene.file_path}
 batch_size: ${trainer.batch_size}
 resolution: 512
+save_mesh: true
 metric_names:
     - chamfer

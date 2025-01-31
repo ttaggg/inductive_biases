@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import List
 from typing_extensions import Annotated
 
-import torch
 import typer
 
 from ib.utils.logging_module import logging
@@ -26,16 +25,21 @@ def evaluation(
     resolution: int = 512,
     batch_size: int = 256000,
     device: str = "cuda",
+    save_mesh: bool = False,
 ) -> None:
     """Evaluate the model."""
 
     logging.stage("Running evaluation.")
 
-    model = torch.load(model_path, weights_only=False, map_location=device)
-    model.to(device)
-
     evaluator = Evaluator(pointcloud_path)
-    results = evaluator.run(model, metric, resolution, batch_size)
+    results = evaluator.run_from_path(
+        model_path,
+        device,
+        metric,
+        resolution,
+        batch_size,
+        save_mesh,
+    )
 
     logging.panel("Results", yaml.dump(results))
 
