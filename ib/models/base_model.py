@@ -1,5 +1,6 @@
 """Base models for INR training."""
 
+import yaml
 from typing import Dict
 
 import lightning as L
@@ -8,6 +9,7 @@ from omegaconf import DictConfig
 from torch import nn
 from torch.optim import Optimizer
 
+from ib.utils.logging_module import logging
 from ib.utils.model import save_model
 from ib.metrics.evaluator import Evaluator
 
@@ -37,8 +39,8 @@ class BaseModel(L.LightningModule):
     def training_step(self, model_inputs: Dict[str, torch.Tensor], _) -> torch.Tensor:
         losses = self.loss_fn(self.inr, model_inputs)
         loss = torch.stack(list(losses.values())).mean()
-        self.log("losses/total", loss, on_step=False, on_epoch=True, prog_bar=True)
-        self.log_dict(losses, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("losses/total", loss, on_step=True, on_epoch=False, prog_bar=True)
+        self.log_dict(losses, on_step=True, on_epoch=False, prog_bar=True)
         return loss
 
     def configure_optimizers(self) -> Optimizer:
@@ -71,9 +73,12 @@ class BaseModel(L.LightningModule):
             metric_names=self.eval_cfg.metric_names,
             resolution=self.eval_cfg.resolution,
             batch_size=self.eval_cfg.batch_size,
+            save_mesh=self.eval_cfg.save_mesh,
         )
         # Log results using self.logger.experiment, because direct use of log_dict()
         # is not possible in on_train_end.
         if self.logger:
             for key, value in results.items():
                 self.logger.experiment.add_scalar(key, value, self.current_epoch)
+
+        logging.panel(f"Results: Epoch {self.current_epoch}.", yaml.dump(results))
