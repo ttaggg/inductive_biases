@@ -1,8 +1,11 @@
 """Resample points on OBJ mesh."""
 
-import numpy as np
+import sys
 from pathlib import Path
 from typing import Optional, Tuple
+
+import numpy as np
+from tqdm import tqdm
 
 from ib.utils.data import load_obj, write_obj
 from ib.utils.logging_module import logging
@@ -129,13 +132,18 @@ class Resampler:
         sampled_points = np.empty((num_samples, 3), dtype=np.float32)
         sampled_normals = np.empty((num_samples, 3), dtype=np.float32)
 
-        for i, face_idx in enumerate(sampled_faces):
-            v0, v1, v2 = self.vertices[self.faces[face_idx]]
-            sampled_points[i] = sample_point_in_triangle(v0, v1, v2)
-            sampled_normals[i] = compute_face_normal(v0, v1, v2)
-
-            if i % int(num_samples * 0.1) == 0:
-                logging.info(f"Sampling: {i} / {num_samples} steps done.")
+        with tqdm(
+            total=len(sampled_faces),
+            desc="Sampling vertices and normals",
+            unit=" vertices",
+            dynamic_ncols=True,
+            disable=not sys.stdout.isatty(),
+        ) as pbar:
+            for i, face_idx in enumerate(sampled_faces):
+                v0, v1, v2 = self.vertices[self.faces[face_idx]]
+                sampled_points[i] = sample_point_in_triangle(v0, v1, v2)
+                sampled_normals[i] = compute_face_normal(v0, v1, v2)
+                pbar.update(1)
 
         return sampled_points, sampled_normals
 

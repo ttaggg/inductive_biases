@@ -1,11 +1,13 @@
 """Utils for models."""
 
+import sys
 from pathlib import Path
 from typing import Tuple
 
 import lightning as L
 import numpy as np
 import torch
+from tqdm import tqdm
 
 from ib.utils.logging_module import logging
 
@@ -63,16 +65,22 @@ def query_model(
     coords = make_coordinates(grid_size=grid_size)
     coords = torch.split(coords, batch_size, dim=0)
 
-    combined_sdf = []
-    for i, batch_coords in enumerate(coords):
-        batch_coords = batch_coords.to(device)
+    with tqdm(
+        total=len(coords),
+        desc="Query model",
+        unit=" steps",
+        dynamic_ncols=True,
+        disable=not sys.stdout.isatty(),
+    ) as pbar:
 
-        if i % (int(len(coords) * 0.1) + 1) == 0:
-            logging.info(f"{i} / {len(coords)} batches are done.")
+        combined_sdf = []
+        for batch_coords in coords:
+            batch_coords = batch_coords.to(device)
+            batch_sdf = model(batch_coords)
+            batch_sdf = batch_sdf.detach().cpu().numpy()
+            combined_sdf.append(batch_sdf)
 
-        batch_sdf = model(batch_coords)
-        batch_sdf = batch_sdf.detach().cpu().numpy()
-        combined_sdf.append(batch_sdf)
+            pbar.update(1)
 
     sdf = np.concatenate(combined_sdf, axis=0)
     sdf = sdf.reshape(grid_size)
