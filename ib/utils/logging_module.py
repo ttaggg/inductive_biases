@@ -1,6 +1,7 @@
 """Custom logging module."""
 
 import logging as default_logging
+import sys
 from pathlib import Path
 from typing import Union
 
@@ -56,13 +57,18 @@ class LoggingModule:
         if newline:
             outputs = "\n" + outputs
 
-        # Log to console
-        self.console.print(outputs)
+        # Log to console if there is one.
+        if sys.stdout.isatty():
+            self.console.print(outputs)
 
         # Log to file (strip Rich formatting for file output)
         if isinstance(inputs, Panel):
             # Render Rich objects as plain text
-            stripped_message = self.console.export_text()
+            temp_console = Console()
+            with temp_console.capture() as capture:
+                temp_console.print(inputs)
+            stripped_message = capture.get()
+
             if inputs.title:
                 stripped_message = f"Panel: {inputs.title}\n{stripped_message}"
         else:
