@@ -1,11 +1,9 @@
 """Resample points on OBJ mesh."""
 
-import sys
 from pathlib import Path
 from typing import Optional, Tuple
 
 import numpy as np
-from tqdm import tqdm
 
 from ib.utils.data import load_obj, write_obj
 from ib.utils.logging_module import logging
@@ -15,26 +13,44 @@ class SamplingException(Exception):
     """Raise sampling exception."""
 
 
-def compute_face_normal(v0, v1, v2):
-    """Compute the normal of a triangle face given its 3 vertices."""
-    normal = np.cross(v1 - v0, v2 - v0)
-    unit_normal = normal / np.linalg.norm(normal)
-    return unit_normal
+def compute_face_normals(vertices, faces):
+    """Compute normals for multiple triangle faces in a vectorized manner."""
+    v0, v1, v2 = vertices[faces[:, 0]], vertices[faces[:, 1]], vertices[faces[:, 2]]
+    normals = np.cross(v1 - v0, v2 - v0)
+    normals /= np.linalg.norm(normals, axis=1, keepdims=True)
+    return normals
 
 
-def compute_face_area(v0, v1, v2):
-    """Compute the area of a triangle given its vertices using cross product."""
-    return 0.5 * np.linalg.norm(np.cross(v1 - v0, v2 - v0))
+def compute_face_areas(vertices, faces):
+    """Compute the areas of multiple triangles in a vectorized manner."""
+    v0 = vertices[faces[:, 0]]
+    v1 = vertices[faces[:, 1]]
+    v2 = vertices[faces[:, 2]]
+    cross_product = np.cross(v1 - v0, v2 - v0)
+    face_areas = 0.5 * np.linalg.norm(cross_product, axis=1)
+    return face_areas
 
 
-def sample_point_in_triangle(v0, v1, v2):
-    """Sample a point uniformly inside a triangle using barycentric coordinates."""
-    r1 = np.sqrt(np.random.rand())  # sqrt ensures uniform sampling
-    r2 = np.random.rand()
+def sample_points_in_triangles(vertices, faces, sampled_faces):
+    """Sample points uniformly inside multiple triangles using barycentric coordinates."""
+    num_samples = len(sampled_faces)
+
+    v0, v1, v2 = (
+        vertices[faces[sampled_faces, 0]],
+        vertices[faces[sampled_faces, 1]],
+        vertices[faces[sampled_faces, 2]],
+    )
+
+    # Generate random barycentric coordinates
+    r1 = np.sqrt(np.random.rand(num_samples))[:, np.newaxis]
+    r2 = np.random.rand(num_samples)[:, np.newaxis]
     u = 1 - r1
     v = r1 * (1 - r2)
     w = r1 * r2
-    return u * v0 + v * v1 + w * v2
+
+    sampled_points = u * v0 + v * v1 + w * v2
+
+    return sampled_points
 
 
 class Resampler:
@@ -70,23 +86,14 @@ class Resampler:
             with mesh.sample_points_uniformly() from open3d.
         """
         logging.stage("Sampling vertices and normals.")
-        if 2 * len(self.faces) > num_samples:
+        if 3 * len(self.faces) > num_samples:
             raise SamplingException(
                 f"Number of samples {num_samples} is fewer than "
-                f"number of faces {len(self.faces)} x 2."
+                f"number of faces {len(self.faces)} x 3."
             )
 
         # We sample based on the area.
-        face_areas = np.array(
-            [
-                compute_face_area(
-                    self.vertices[face[0]],
-                    self.vertices[face[1]],
-                    self.vertices[face[2]],
-                )
-                for face in self.faces
-            ]
-        )
+        face_areas = compute_face_areas(self.vertices, self.faces)
         face_probs = face_areas / face_areas.sum()
 
         # Step 1: Sample one point per face.
@@ -129,21 +136,11 @@ class Resampler:
                 len(self.faces), size=num_samples, p=face_probs
             )
 
-        sampled_points = np.empty((num_samples, 3), dtype=np.float32)
-        sampled_normals = np.empty((num_samples, 3), dtype=np.float32)
-
-        with tqdm(
-            total=len(sampled_faces),
-            desc="Sampling vertices and normals",
-            unit=" vertices",
-            dynamic_ncols=True,
-            disable=not sys.stdout.isatty(),
-        ) as pbar:
-            for i, face_idx in enumerate(sampled_faces):
-                v0, v1, v2 = self.vertices[self.faces[face_idx]]
-                sampled_points[i] = sample_point_in_triangle(v0, v1, v2)
-                sampled_normals[i] = compute_face_normal(v0, v1, v2)
-                pbar.update(1)
+        face_normals = compute_face_normals(self.vertices, self.faces)
+        sampled_points = sample_points_in_triangles(
+            self.vertices, self.faces, sampled_faces
+        )
+        sampled_normals = face_normals[sampled_faces]
 
         return sampled_points, sampled_normals
 
@@ -160,3 +157,20 @@ class Resampler:
         pcd.points = o3d.utility.Vector3dVector(self.sampled_vertices)
         pcd.normals = o3d.utility.Vector3dVector(self.sampled_normals)
         o3d.visualization.draw_geometries([pcd], point_show_normal=True)
+
+
+class SimpleResampler(Resampler):
+
+    def run(self, num_samples: int) -> None:
+        """Sample vertices and normals."""
+        logging.stage("Sampling vertices and normals.")
+
+        face_areas = compute_face_areas(self.vertices, self.faces)
+        face_probs = face_areas / face_areas.sum()
+
+        self.sampled_vertices, self.sampled_normals = (
+            self.sample_points_normals_from_faces(
+                num_samples=num_samples,
+                face_probs=face_probs,
+            )
+        )
