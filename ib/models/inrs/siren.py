@@ -61,8 +61,8 @@ class Siren(nn.Module):
         hidden_features: int,
         hidden_layers: int,
         out_features: int,
-        first_omega_0: float = 30.0,
-        hidden_omega_0: float = 30.0,
+        first_omega: float = 30.0,
+        hidden_omega: float = 30.0,
     ) -> None:
         super().__init__()
 
@@ -72,7 +72,7 @@ class Siren(nn.Module):
                 in_features,
                 hidden_features,
                 is_first=True,
-                omega_0=first_omega_0,
+                omega_0=first_omega,
             )
         )
         for _ in range(hidden_layers):
@@ -80,7 +80,7 @@ class Siren(nn.Module):
                 SineLayer(
                     hidden_features,
                     hidden_features,
-                    omega_0=hidden_omega_0,
+                    omega_0=hidden_omega,
                 )
             )
         layers.append(
@@ -88,7 +88,7 @@ class Siren(nn.Module):
                 hidden_features,
                 out_features,
                 is_last=True,
-                omega_0=hidden_omega_0,
+                omega_0=hidden_omega,
             )
         )
 
