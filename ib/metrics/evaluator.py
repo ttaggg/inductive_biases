@@ -8,13 +8,14 @@ from torch import nn
 
 from ib.datasets.resamplers import SimpleResampler
 from ib.metrics.chamfer_distance import ChamferDistance
+from ib.metrics.iou import Iou
 from ib.models.decoders import SdfDecoder
-from ib.utils.logging_module import logging
 from ib.utils.pipeline import generate_output_mesh_path
 
 
 class Metric(str, Enum):
     chamfer = "chamfer"
+    iou = "iou"
 
 
 class Evaluator:
@@ -90,6 +91,10 @@ class Evaluator:
             resampler = SimpleResampler(decoder.vertices, decoder.faces)
             resampler.run(num_samples=chamfer_dist.gt_size())
             results["metrics/chamfer"] = chamfer_dist(resampler.sampled_vertices)
+
+        if Metric.iou in metric_names:
+            iou_dist = Iou(self.file_path)
+            results["metrics/iou"] = iou_dist(decoder.sdf)
 
         model.train(is_training)
         return results
