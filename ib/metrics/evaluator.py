@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 from torch import nn
 
-from ib.datasets.resamplers import Resampler, SamplingException
+from ib.datasets.resamplers import SimpleResampler
 from ib.metrics.chamfer_distance import ChamferDistance
 from ib.models.decoders import SdfDecoder
 from ib.utils.logging_module import logging
@@ -19,9 +19,8 @@ class Metric(str, Enum):
 
 class Evaluator:
 
-    def __init__(self, pointcloud_path: Path) -> None:
-        # TODO(oleg): initialize Chamfer distance class only when needed.
-        self.chamfer = ChamferDistance(pointcloud_path)
+    def __init__(self, file_path: Path) -> None:
+        self.file_path = file_path
 
     def run(
         self,
@@ -85,17 +84,12 @@ class Evaluator:
             decoder.save(output_path)
 
         results = {}
-        try:
-            if Metric.chamfer in metric_names:
-                resampler = Resampler(decoder.vertices, decoder.faces)
-                resampler.run(num_samples=min(64_000_000, 2 * len(decoder.faces)))
-                results["metrics/chamfer"] = self.chamfer(resampler.sampled_vertices)
-        except SamplingException as e:
-            logging.info(str(e))
-            logging.info(
-                "Cannot sample from the generated mesh. "
-                "Skipping Chamfer metric evaluation."
-            )
+
+        if Metric.chamfer in metric_names:
+            chamfer_dist = ChamferDistance(self.file_path)
+            resampler = SimpleResampler(decoder.vertices, decoder.faces)
+            resampler.run(num_samples=chamfer_dist.gt_size())
+            results["metrics/chamfer"] = chamfer_dist(resampler.sampled_vertices)
 
         model.train(is_training)
         return results

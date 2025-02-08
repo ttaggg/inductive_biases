@@ -29,7 +29,7 @@ class BaseModel(L.LightningModule):
         self.model_cfg = model_cfg
         self.eval_cfg = model_cfg.evaluator
         self.evaluator = Evaluator(
-            pointcloud_path=self.eval_cfg.file_path,
+            file_path=self.eval_cfg.file_path,
         )
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
@@ -39,8 +39,8 @@ class BaseModel(L.LightningModule):
     def training_step(self, model_inputs: Dict[str, torch.Tensor], _) -> torch.Tensor:
         losses = self.loss_fn(self.inr, model_inputs)
         loss = torch.stack(list(losses.values())).mean()
-        self.log("losses/total", loss, on_step=True, on_epoch=False, prog_bar=True)
-        self.log_dict(losses, on_step=True, on_epoch=False, prog_bar=True)
+        self.log("losses/total", loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log_dict(losses, on_step=False, on_epoch=True, prog_bar=True)
         return loss
 
     def configure_optimizers(self) -> Optimizer:
