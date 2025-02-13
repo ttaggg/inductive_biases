@@ -11,6 +11,7 @@ from ib.metrics.chamfer_distance import ChamferDistance
 from ib.metrics.iou import Iou
 from ib.models.decoders import SdfDecoder
 from ib.utils.pipeline import generate_output_mesh_path
+from ib.utils.logging_module import logging
 
 
 class Metric(str, Enum):
@@ -74,8 +75,14 @@ class Evaluator:
         model.eval()
 
         # Run once for all the metrics.
-        decoder = SdfDecoder(model)
-        decoder.run(resolution, batch_size)
+        try:
+            decoder = SdfDecoder(model)
+            decoder.run(resolution, batch_size)
+        except Exception as e:
+            logging.info(f"An error occurred: {e}.")
+            logging.info("Cannot decode, returning empty metrics.")
+            model.train(is_training)
+            return {}
 
         if save_mesh:
             output_path = generate_output_mesh_path(
