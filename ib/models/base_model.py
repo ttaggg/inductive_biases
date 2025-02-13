@@ -45,7 +45,20 @@ class BaseModel(L.LightningModule):
 
     def configure_optimizers(self) -> Optimizer:
         optimizer = torch.optim.Adam(self.inr.parameters(), lr=self.model_cfg.lr)
-        return optimizer
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=self.model_cfg.max_epochs,
+            eta_min=1e-6,
+        )
+
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "epoch",  # Step at the end of each epoch
+                "frequency": 1,  # Apply every epoch
+            },
+        }
 
     def on_train_epoch_end(self) -> None:
         """Actions to make in the end of epoch."""
