@@ -1,0 +1,2 @@
+_target_: ib.models.losses.sdf_losses.L1Loss
+clip_sdf: ${scene.dataset.clip_sdf}

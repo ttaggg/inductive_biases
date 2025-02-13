@@ -1,0 +1,6 @@
+# 
+defaults:
+  - dataset: sdf_dataset
+
+name: thai_statue
+file_path: ${oc.env:HOME}/datasets/3d_scenes/thai_statue/thai_statue_sdf_512.npy
