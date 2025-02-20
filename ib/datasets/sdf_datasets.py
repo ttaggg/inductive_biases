@@ -3,6 +3,8 @@
 import numpy as np
 from torch.utils.data import Dataset
 
+from ib.utils.logging_module import logging
+
 
 class SdfDataset(Dataset):
     """Dataset class for SDF data."""
@@ -23,8 +25,11 @@ class SdfDataset(Dataset):
         self.sdf = np.clip(self.sdf, -clip_sdf, clip_sdf)
 
         # Precompute for future.
-        sdf_threshold = 5 * (2.0 / self.dim[0])
+        sdf_threshold = 2.0 * (2.0 / self.dim[0])
         self.surface_indices = np.array(np.where(np.abs(self.sdf) < sdf_threshold)).T
+
+        logging.info(f"Dataset size: {self.num_samples} samples.")
+        logging.info(f"Dataset size: {len(self)} batches.")
 
     def __getitem__(self, _: int) -> dict[str, np.ndarray]:
 
@@ -46,9 +51,10 @@ class SdfDataset(Dataset):
             "sdf": sdf_values.astype(np.float32),
         }
 
+    @property
+    def num_samples(self):
+        return int(len(self.surface_indices) / (1 - self.off_surface_ratio))
+
     def __len__(self) -> int:
         """__len__ method of torch.utils.data.Dataset."""
-        return (
-            int(len(self.surface_indices) / (1 - self.off_surface_ratio))
-            // self.batch_size
-        )
+        return self.num_samples // self.batch_size
