@@ -1,6 +1,7 @@
 """Base models for INR training."""
 
 import yaml
+from pathlib import Path
 from typing import Dict
 
 import lightning as L
@@ -29,7 +30,7 @@ class BaseModel(L.LightningModule):
         self.model_cfg = model_cfg
         self.eval_cfg = model_cfg.evaluator
         self.evaluator = Evaluator(
-            file_path=self.eval_cfg.file_path,
+            file_path=Path(self.eval_cfg.file_path),
         )
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:

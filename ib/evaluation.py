@@ -19,9 +19,7 @@ app = typer.Typer(add_completion=False)
 def evaluation(
     model_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
     metric: List[Metric] = typer.Option(...),
-    pointcloud_path: Annotated[
-        Path, typer.Option(callback=resolve_and_expand_path)
-    ] = None,
+    file_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)] = None,
     resolution: int = 512,
     batch_size: int = 256000,
     device: str = "cuda",
@@ -31,7 +29,7 @@ def evaluation(
 
     logging.stage("Running evaluation.")
 
-    evaluator = Evaluator(pointcloud_path)
+    evaluator = Evaluator(file_path)
     results = evaluator.run_from_path(
         model_path,
         device,

@@ -10,8 +10,8 @@ from pathlib import Path
 import numpy as np
 import torch
 import open3d as o3d
-from skimage import measure
 
+from ib.utils.geometry import sdf_to_mesh
 from ib.utils.logging_module import logging
 from ib.utils.model import query_model
 
@@ -40,9 +40,7 @@ class SdfDecoder:
 
         # Get mesh.
         self.sdf = query_model(self.model, resolution, batch_size, self.model.device)
-        spacing = (1.0 / resolution, 1.0 / resolution, 1.0 / resolution)
-        verts, faces, _, _ = measure.marching_cubes(self.sdf, level=0, spacing=spacing)
-        verts = 2 * verts - 1
+        verts, faces = sdf_to_mesh(self.sdf)
 
         # Create TriangleMesh object.
         self.mesh = o3d.geometry.TriangleMesh()

@@ -6,10 +6,10 @@ from pathlib import Path
 import torch
 from torch import nn
 
-from ib.datasets.resamplers import SimpleResampler
 from ib.metrics.chamfer_distance import ChamferDistance
 from ib.metrics.iou import Iou
 from ib.models.decoders import SdfDecoder
+from ib.utils.geometry import mesh_to_pointcloud, sdf_to_pointcloud
 from ib.utils.pipeline import generate_output_mesh_path
 from ib.utils.logging_module import logging
 
@@ -19,10 +19,16 @@ class Metric(str, Enum):
     iou = "iou"
 
 
+class FileType(str, Enum):
+    sdf = "sdf"
+    pc = "pointcloud"
+
+
 class Evaluator:
 
     def __init__(self, file_path: Path) -> None:
         self.file_path = file_path
+        self.file_type = FileType.sdf if file_path.suffix == ".npy" else FileType.pc
 
     def run(
         self,
@@ -94,12 +100,20 @@ class Evaluator:
         results = {}
 
         if Metric.chamfer in metric_names:
-            chamfer_dist = ChamferDistance(self.file_path)
-            resampler = SimpleResampler(decoder.vertices, decoder.faces)
-            resampler.run(num_samples=chamfer_dist.gt_size())
-            results.update(chamfer_dist(resampler.sampled_vertices))
 
-        if Metric.iou in metric_names:
+            if self.file_type is FileType.pc:
+                chamfer_fn = ChamferDistance.from_pointcloud_path(self.file_path)
+                pred_verts = mesh_to_pointcloud(
+                    decoder.vertices, decoder.faces, num_samples=chamfer_fn.gt_size()
+                )
+                results.update(chamfer_fn(pred_verts))
+
+            elif self.file_type is FileType.sdf:
+                chamfer_fn = ChamferDistance.from_sdf_path(self.file_path)
+                pred_verts = sdf_to_pointcloud(decoder.sdf, num_samples=1_000_000)
+                results.update(chamfer_fn(pred_verts))
+
+        if Metric.iou in metric_names and self.file_type is FileType.sdf:
             iou_dist = Iou(self.file_path)
             results.update(iou_dist(decoder.sdf))
 
