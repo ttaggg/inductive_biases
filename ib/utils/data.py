@@ -97,3 +97,9 @@ def write_obj(
             for row in data:
                 row = list(map(str, row))
                 outfile.write(f"{field} {' '.join(row)}\n")
+
+
+def write_xyz(file_path: Path, points: np.ndarray, normals: np.ndarray) -> None:
+    """Write XYZ pointcloud like SIREN authors."""
+    point_cloud = np.concatenate([points, normals], axis=-1)
+    np.savetxt(file_path, point_cloud)
