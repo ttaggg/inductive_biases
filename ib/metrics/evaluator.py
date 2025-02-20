@@ -97,11 +97,11 @@ class Evaluator:
             chamfer_dist = ChamferDistance(self.file_path)
             resampler = SimpleResampler(decoder.vertices, decoder.faces)
             resampler.run(num_samples=chamfer_dist.gt_size())
-            results["metrics/chamfer"] = chamfer_dist(resampler.sampled_vertices)
+            results.update(chamfer_dist(resampler.sampled_vertices))
 
         if Metric.iou in metric_names:
             iou_dist = Iou(self.file_path)
-            results["metrics/iou"] = iou_dist(decoder.sdf)
+            results.update(iou_dist(decoder.sdf))
 
         model.train(is_training)
         return results

@@ -23,14 +23,15 @@ class ChamferDistance:
         indices = np.random.choice(len(vertices), num_points, replace=False)
         self.vertices = vertices[indices]
 
-        # Normalize and create a KDTree.
+        # Create a KDTree.
         self.tree = KDTree(self.vertices)
 
     def __call__(self, other_vertices: np.ndarray) -> float:
         dist_lhs = self.tree.query(other_vertices, workers=-1)[0]
         other_tree = KDTree(other_vertices)
         dist_rhs = other_tree.query(self.vertices, workers=-1)[0]
-        return float((dist_lhs.mean() + dist_rhs.mean()) / 2)
+        dist = (dist_lhs.mean() + dist_rhs.mean()) / 2
+        return {"metrics/chamfer": float(dist)}
 
     def gt_size(self):
         return len(self.vertices)
