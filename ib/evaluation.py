@@ -2,8 +2,7 @@
 
 import yaml
 from pathlib import Path
-from typing import List
-from typing_extensions import Annotated
+from typing import Annotated
 
 import typer
 
@@ -18,7 +17,7 @@ app = typer.Typer(add_completion=False)
 @measure_time
 def evaluation(
     model_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
-    metric: List[Metric] = typer.Option(...),
+    metric: list[Metric] = typer.Option(...),
     file_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)] = None,
     resolution: int = 512,
     batch_size: int = 256000,

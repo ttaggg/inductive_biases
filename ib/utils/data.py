@@ -1,7 +1,7 @@
 """Data related utils."""
 
 from pathlib import Path
-from typing import Dict, Tuple, Callable
+from typing import Callable
 
 import numpy as np
 
@@ -9,7 +9,7 @@ import numpy as np
 def normalize_points_and_normals(
     points: np.ndarray,
     normals: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Normalizes points and normals.
 
     Args:
@@ -45,8 +45,8 @@ def normalize_points_and_normals(
 
 def load_obj(
     file_path: str,
-    field_func: Dict[str, Callable],
-) -> Tuple[np.ndarray, ...]:
+    field_func: dict[str, Callable],
+) -> tuple[np.ndarray, ...]:
     """Load OBJ pointcloud.
 
     Args:
@@ -73,7 +73,7 @@ def load_obj(
     return [np.array(parsed_data[key]) for key in field_func]
 
 
-def load_xyz(file_path: str) -> Tuple[np.ndarray, np.ndarray]:
+def load_xyz(file_path: str) -> tuple[np.ndarray, np.ndarray]:
     """Load XYZ pointcloud like SIREN authors."""
     point_cloud = np.genfromtxt(file_path)
     points = point_cloud[:, :3]
@@ -83,7 +83,7 @@ def load_xyz(file_path: str) -> Tuple[np.ndarray, np.ndarray]:
 
 def write_obj(
     file_path: Path,
-    field_data: Dict[str, np.array],
+    field_data: dict[str, np.array],
 ) -> None:
     """Write OBJ pointcloud.
 

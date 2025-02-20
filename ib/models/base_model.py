@@ -2,7 +2,6 @@
 
 import yaml
 from pathlib import Path
-from typing import Dict
 
 import lightning as L
 import torch
@@ -37,7 +36,7 @@ class BaseModel(L.LightningModule):
         outputs = self.inr(inputs)
         return outputs
 
-    def training_step(self, model_inputs: Dict[str, torch.Tensor], _) -> torch.Tensor:
+    def training_step(self, model_inputs: dict[str, torch.Tensor], _) -> torch.Tensor:
         losses = self.loss_fn(self.inr, model_inputs)
         loss = torch.stack(list(losses.values())).mean()
         self.log("losses/total", loss, on_step=False, on_epoch=True, prog_bar=True)

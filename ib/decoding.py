@@ -1,7 +1,7 @@
 """Export INR model to mesh."""
 
 from pathlib import Path
-from typing_extensions import Annotated
+from typing import Annotated
 
 import typer
 

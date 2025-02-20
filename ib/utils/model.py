@@ -2,7 +2,6 @@
 
 import sys
 from pathlib import Path
-from typing import Tuple
 
 import lightning as L
 import numpy as np
@@ -19,8 +18,8 @@ def save_model(model: L.LightningModule, output_dir: Path, epoch: int) -> None:
 
 
 def make_coordinates(
-    grid_size: Tuple[int, int, int],
-    coord_range: Tuple[int, int] = (-1.0, 1.0),
+    grid_size: tuple[int, int, int],
+    coord_range: tuple[int, int] = (-1.0, 1.0),
 ) -> torch.Tensor:
 
     x_coords = np.linspace(

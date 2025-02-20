@@ -1,7 +1,7 @@
 """Resample points on OBJ mesh."""
 
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 
@@ -126,7 +126,7 @@ class Resampler:
         self,
         num_samples: int,
         face_probs: Optional[np.ndarray] = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Helper function to sample points and normals from faces."""
 
         if face_probs is None:

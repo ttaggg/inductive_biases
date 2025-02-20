@@ -1,7 +1,6 @@
 """Dataset classes for point cloud data."""
 
 from abc import abstractmethod
-from typing import Dict, Tuple
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -27,7 +26,7 @@ class PointCloudDataset(Dataset):
         assert self.batch_size <= len(self.points)
         logging.info(f"Dataset size: {len(self.points)}.")
 
-    def __getitem__(self, _: int) -> Dict[str, np.ndarray]:
+    def __getitem__(self, _: int) -> dict[str, np.ndarray]:
         """Retrieve the whole batch of data."""
 
         off_num_samples = int(self.batch_size * self.off_surface_ratio)
@@ -59,7 +58,7 @@ class PointCloudDataset(Dataset):
         return len(self.points) // self.batch_size
 
     @abstractmethod
-    def load(self, file_path: str) -> Tuple[np.ndarray, np.ndarray]:
+    def load(self, file_path: str) -> tuple[np.ndarray, np.ndarray]:
         """
         Loads a pointcloud from the file.
 
@@ -74,12 +73,12 @@ class PointCloudDataset(Dataset):
 class ObjDataset(PointCloudDataset):
     """Dataset class for OBJ format data."""
 
-    def load(self, file_path: str) -> Tuple[np.ndarray, np.ndarray]:
+    def load(self, file_path: str) -> tuple[np.ndarray, np.ndarray]:
         return load_obj(file_path, {"v": float, "vn": float})
 
 
 class XyzDataset(PointCloudDataset):
     """Dataset class for XYZ format data."""
 
-    def load(self, file_path: str) -> Tuple[np.ndarray, np.ndarray]:
+    def load(self, file_path: str) -> tuple[np.ndarray, np.ndarray]:
         return load_xyz(file_path)

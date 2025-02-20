@@ -4,8 +4,6 @@ Adapted from:
 https://github.com/vsitzmann/siren
 """
 
-from typing import Dict
-
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -31,8 +29,8 @@ class SirenSdfLoss(nn.Module):
     def forward(
         self,
         model: nn.Module,
-        model_inputs: Dict[str, torch.Tensor],
-    ) -> Dict[str, torch.Tensor]:
+        model_inputs: dict[str, torch.Tensor],
+    ) -> dict[str, torch.Tensor]:
 
         coords = model_inputs["inputs"].detach().requires_grad_(True)
         on_surface_mask = model_inputs["sdf"]

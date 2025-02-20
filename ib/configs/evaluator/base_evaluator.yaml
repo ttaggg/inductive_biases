@@ -4,3 +4,4 @@ resolution: 512
 save_mesh: true
 metric_names:
     - chamfer
+    - iou
