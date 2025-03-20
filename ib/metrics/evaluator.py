@@ -7,6 +7,7 @@ import torch
 from torch import nn
 
 from ib.metrics.chamfer_distance import ChamferDistance
+from ib.metrics.fourier_freq import FourierFrequency
 from ib.metrics.iou import Iou
 from ib.models.decoders import SdfDecoder
 from ib.utils.geometry import mesh_to_pointcloud, sdf_to_pointcloud
@@ -17,6 +18,7 @@ from ib.utils.logging_module import logging
 class Metric(str, Enum):
     chamfer = "chamfer"
     iou = "iou"
+    ff = "fourier_freq"
 
 
 class FileType(str, Enum):
@@ -114,8 +116,12 @@ class Evaluator:
                 results.update(chamfer_fn(pred_verts))
 
         if Metric.iou in metric_names and self.file_type is FileType.sdf:
-            iou_dist = Iou(self.file_path)
-            results.update(iou_dist(decoder.sdf))
+            iou_fn = Iou(self.file_path)
+            results.update(iou_fn(decoder.sdf))
+
+        if Metric.ff in metric_names and self.file_type is FileType.sdf:
+            fourier_freq_fn = FourierFrequency(self.file_path)
+            results.update(fourier_freq_fn(decoder.sdf))
 
         model.train(is_training)
         return results
