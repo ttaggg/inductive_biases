@@ -5,7 +5,7 @@ from abc import abstractmethod
 import numpy as np
 from torch.utils.data import Dataset
 
-from ib.utils.data import load_obj, load_xyz, normalize_points_and_normals
+from ib.utils.data import load_obj, load_ply, load_xyz, normalize_points_and_normals
 from ib.utils.logging_module import logging
 
 
@@ -82,3 +82,10 @@ class XyzDataset(PointCloudDataset):
 
     def load(self, file_path: str) -> tuple[np.ndarray, np.ndarray]:
         return load_xyz(file_path)
+
+
+class PlyDataset(PointCloudDataset):
+    """Dataset class for PLY format data."""
+
+    def load(self, file_path: str) -> tuple[np.ndarray, np.ndarray]:
+        return load_ply(file_path)

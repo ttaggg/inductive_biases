@@ -1,6 +1,7 @@
 """Data related utils."""
 
 from pathlib import Path
+from plyfile import PlyData
 from typing import Callable
 
 import numpy as np
@@ -71,6 +72,15 @@ def load_obj(
                 parsed_data[key].append(value)
 
     return [np.array(parsed_data[key]) for key in field_func]
+
+
+def load_ply(file_path: str) -> tuple[np.ndarray, np.ndarray]:
+    """Loads vertices and normals from a PLY file."""
+    ply_data = PlyData.read(file_path)
+    vertex_data = ply_data["vertex"]
+    points = np.vstack((vertex_data["x"], vertex_data["y"], vertex_data["z"])).T
+    normals = np.vstack((vertex_data["nx"], vertex_data["ny"], vertex_data["nz"])).T
+    return points, normals
 
 
 def load_xyz(file_path: str) -> tuple[np.ndarray, np.ndarray]:

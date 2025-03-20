@@ -10,6 +10,7 @@ dependencies = [
     "lightning>=2.4.0",
     "numpy>=2.2.0",
     "open3d>=0.18.0",
+    "plyfile>=1.1",
     "rich>=13.9.4",
     "scikit-image>=0.25.0",
     "scipy>=1.14.1",

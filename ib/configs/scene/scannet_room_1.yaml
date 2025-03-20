@@ -1,0 +1,7 @@
+# Scannet++, id: 8b5caf3398
+
+defaults:
+  - dataset: ply_dataset
+
+name: scannet_room_1
+file_path: ${oc.env:HOME}/datasets/3d_scenes/scannet_room_1/pc_aligned.ply
