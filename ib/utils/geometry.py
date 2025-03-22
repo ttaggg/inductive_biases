@@ -14,12 +14,20 @@ def sdf_to_mesh(sdf: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return verts, faces
 
 
-def mesh_to_pointcloud(verts: np.ndarray, faces: np.ndarray, num_samples) -> np.ndarray:
+def mesh_to_pointcloud(
+    verts: np.ndarray,
+    faces: np.ndarray,
+    num_points: int,
+) -> tuple[np.ndarray, np.ndarray]:
     resampler = SimpleResampler(verts, faces)
-    resampler.run(num_samples=num_samples)
-    return resampler.sampled_vertices
+    resampler.run(num_samples=num_points)
+    return resampler.sampled_vertices, resampler.sampled_normals
 
 
-def sdf_to_pointcloud(sdf: np.ndarray, num_samples: int) -> np.ndarray:
+def sdf_to_pointcloud(
+    sdf: np.ndarray,
+    num_points: int,
+) -> tuple[np.ndarray, np.ndarray]:
     verts, faces = sdf_to_mesh(sdf)
-    return mesh_to_pointcloud(verts, faces, num_samples)
+    vertices, normals = mesh_to_pointcloud(verts, faces, num_points)
+    return vertices, normals

@@ -26,16 +26,49 @@ class FileType(str, Enum):
     pc = "pointcloud"
 
 
+def _resolve_file_type(file_path: Path):
+    return FileType.sdf if file_path.suffix == ".npy" else FileType.pc
+
+
+def _resolve_metrics(file_path: Path, metric: list[Metric], num_samples: int) -> dict:
+
+    file_type = _resolve_file_type(file_path)
+    mapping = {}
+
+    if Metric.chamfer in metric:
+        if file_type is FileType.pc:
+            mapping[Metric.chamfer] = ChamferDistance.from_pointcloud_path(
+                file_path, num_samples
+            )
+        elif file_type is FileType.sdf:
+            mapping[Metric.chamfer] = ChamferDistance.from_sdf_path(
+                file_path, num_samples
+            )
+
+    if Metric.iou in metric and file_type is FileType.sdf:
+        mapping[Metric.iou] = Iou(file_path)
+
+    if Metric.ff in metric and file_type is FileType.sdf:
+        mapping[Metric.ff] = FourierFrequency(file_path)
+
+    return mapping
+
+
 class Evaluator:
 
-    def __init__(self, file_path: Path) -> None:
-        self.file_path = file_path
-        self.file_type = FileType.sdf if file_path.suffix == ".npy" else FileType.pc
+    def __init__(
+        self,
+        file_path: Path,
+        metric: list[Metric],
+        num_samples: int = 1_000_000,
+    ) -> None:
+        self.file_type = _resolve_file_type(file_path)
+        self.metrics = _resolve_metrics(file_path, metric, num_samples)
+        self.num_samples = num_samples
 
     def run(
         self,
         model: nn.Module,
-        metric_names: list[Metric],
         resolution: int,
         batch_size: int,
         save_mesh: bool,
@@ -43,7 +76,6 @@ class Evaluator:
         return self._run(
             model,
             model.current_epoch,
-            metric_names,
             resolution,
             batch_size,
             save_mesh,
@@ -53,7 +85,6 @@ class Evaluator:
         self,
         model_path: Path,
         device: str,
-        metric_names: list[Metric],
         resolution: int,
         batch_size: int,
         save_mesh: bool,
@@ -64,7 +95,6 @@ class Evaluator:
         return self._run(
             model,
             current_epoch,
-            metric_names,
             resolution,
             batch_size,
             save_mesh,
@@ -74,7 +104,6 @@ class Evaluator:
         self,
         model: nn.Module,
         current_epoch: int,
-        metric_names: list[Metric],
         resolution: int,
         batch_size: int,
         save_mesh: bool = True,
@@ -99,29 +128,24 @@ class Evaluator:
             )
             decoder.save(output_path)
 
+        if Metric.chamfer in self.metrics:
+            if self.file_type is FileType.pc:
+                pred_verts, _ = mesh_to_pointcloud(
+                    decoder.vertices, decoder.faces, self.num_samples
+                )
+            elif self.file_type is FileType.sdf:
+                pred_verts, _ = sdf_to_pointcloud(decoder.sdf, self.num_samples)
+
         results = {}
 
-        if Metric.chamfer in metric_names:
+        if Metric.chamfer in self.metrics:
+            results.update(self.metrics[Metric.chamfer](pred_verts))
 
-            if self.file_type is FileType.pc:
-                chamfer_fn = ChamferDistance.from_pointcloud_path(self.file_path)
-                pred_verts = mesh_to_pointcloud(
-                    decoder.vertices, decoder.faces, num_samples=chamfer_fn.gt_size()
-                )
-                results.update(chamfer_fn(pred_verts))
+        if Metric.iou in self.metrics:
+            results.update(self.metrics[Metric.iou](decoder.sdf))
 
-            elif self.file_type is FileType.sdf:
-                chamfer_fn = ChamferDistance.from_sdf_path(self.file_path)
-                pred_verts = sdf_to_pointcloud(decoder.sdf, num_samples=1_000_000)
-                results.update(chamfer_fn(pred_verts))
-
-        if Metric.iou in metric_names and self.file_type is FileType.sdf:
-            iou_fn = Iou(self.file_path)
-            results.update(iou_fn(decoder.sdf))
-
-        if Metric.ff in metric_names and self.file_type is FileType.sdf:
-            fourier_freq_fn = FourierFrequency(self.file_path)
-            results.update(fourier_freq_fn(decoder.sdf))
+        if Metric.ff in self.metrics:
+            results.update(self.metrics[Metric.ff](decoder.sdf))
 
         model.train(is_training)
         return results

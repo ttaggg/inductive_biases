@@ -28,6 +28,7 @@ class SdfDecoder:
     def from_model_path(cls, model_path: Path, device: str):
         model = torch.load(model_path, weights_only=False, map_location=device)
         model.eval()
+        model.to(device)
         return cls(model)
 
     def run(self, resolution: int, batch_size: int) -> None:

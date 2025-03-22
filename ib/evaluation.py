@@ -28,11 +28,10 @@ def evaluation(
 
     logging.stage("Running evaluation.")
 
-    evaluator = Evaluator(file_path)
+    evaluator = Evaluator(file_path, metric)
     results = evaluator.run_from_path(
         model_path,
         device,
-        metric,
         resolution,
         batch_size,
         save_mesh,

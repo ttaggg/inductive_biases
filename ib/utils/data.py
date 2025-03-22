@@ -74,6 +74,19 @@ def load_obj(
     return [np.array(parsed_data[key]) for key in field_func]
 
 
+def load_pointcloud(file_path: Path) -> tuple[np.ndarray, np.ndarray]:
+    if file_path.suffix == ".xyz":
+        vertices, normals = load_xyz(file_path)
+    elif file_path.suffix == ".ply":
+        vertices, normals = load_ply(file_path)
+    else:
+        raise ValueError(
+            "Only .xyz and .ply are supported in evaluation, "
+            f"given: {file_path.suffix}."
+        )
+    return vertices, normals
+
+
 def load_ply(file_path: str) -> tuple[np.ndarray, np.ndarray]:
     """Loads vertices and normals from a PLY file."""
     ply_data = PlyData.read(file_path)

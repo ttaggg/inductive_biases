@@ -30,6 +30,7 @@ class BaseModel(L.LightningModule):
         self.eval_cfg = model_cfg.evaluator
         self.evaluator = Evaluator(
             file_path=Path(self.eval_cfg.file_path),
+            metric=self.eval_cfg.metric_names,
         )
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
@@ -83,7 +84,6 @@ class BaseModel(L.LightningModule):
         """Run the evaluator on the current model."""
         results = self.evaluator.run(
             model=self,
-            metric_names=self.eval_cfg.metric_names,
             resolution=self.eval_cfg.resolution,
             batch_size=self.eval_cfg.batch_size,
             save_mesh=self.eval_cfg.save_mesh,
