@@ -70,7 +70,7 @@ class NormalCosineSimilarity:
         self,
         pred_vertices: np.ndarray,
         pred_normals: np.ndarray,
-        radius: float = 0.003,
+        radius: float = 0.0025,
     ) -> dict:
         pred_tree = KDTree(pred_vertices)
 
@@ -93,6 +93,6 @@ class NormalCosineSimilarity:
         avg_error_closest = (error_target_to_pred + error_pred_to_target) / 2
 
         return {
-            f"metrics/normal_error_radius": float(avg_error_radius),
+            "metrics/normal_error_radius": float(avg_error_radius),
             "metrics/normal_error_closest": float(avg_error_closest),
         }
