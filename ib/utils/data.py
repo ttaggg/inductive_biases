@@ -7,6 +7,18 @@ from typing import Callable
 import numpy as np
 
 
+def filter_incorrect_normals(
+    points: np.ndarray,
+    normals: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    # Filter out invalid normals and points with zero normals.
+    correct_normals = np.logical_and(
+        np.linalg.norm(normals, axis=-1) != 0.0,
+        np.all(np.isfinite(normals), axis=-1),
+    )
+    return points[correct_normals], normals[correct_normals]
+
+
 def normalize_points_and_normals(
     points: np.ndarray,
     normals: np.ndarray,
@@ -23,14 +35,7 @@ def normalize_points_and_normals(
             - normals (np.ndarray): Unit normals.
     """
 
-    # Filter out invalid points of points with zero normals.
-    correct_normals = np.logical_and(
-        np.linalg.norm(normals, axis=-1) != 0.0,
-        np.all(np.isfinite(normals), axis=-1),
-    )
-    normals = normals[correct_normals]
-    points = points[correct_normals]
-
+    points, normals = filter_incorrect_normals(points, normals)
     points -= np.mean(points, axis=0, keepdims=True)
     # TODO(oleg): consider normalization without preserving aspect ratio.
     coord_max = np.amax(points)

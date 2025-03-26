@@ -5,7 +5,7 @@ from typing import Optional
 
 import numpy as np
 
-from ib.utils.data import load_obj, write_obj
+from ib.utils.data import filter_incorrect_normals, load_obj, write_obj
 from ib.utils.logging_module import logging
 
 
@@ -122,6 +122,11 @@ class Resampler:
             (per_face_normals, per_face_normals2, additional_normals)
         )
 
+        self.sampled_vertices, self.sampled_normals = filter_incorrect_normals(
+            self.sampled_vertices,
+            self.sampled_normals,
+        )
+
     def sample_points_normals_from_faces(
         self,
         num_samples: int,
@@ -159,6 +164,11 @@ class Resampler:
         pcd.normals = o3d.utility.Vector3dVector(self.sampled_normals)
         o3d.visualization.draw_geometries([pcd], point_show_normal=True)
 
+    def __len__(self):
+        if self.sampled_vertices is None:
+            return 0
+        return len(self.sampled_vertices)
+
 
 class SimpleResampler(Resampler):
 
@@ -174,4 +184,8 @@ class SimpleResampler(Resampler):
                 num_samples=num_samples,
                 face_probs=face_probs,
             )
+        )
+        self.sampled_vertices, self.sampled_normals = filter_incorrect_normals(
+            self.sampled_vertices,
+            self.sampled_normals,
         )
