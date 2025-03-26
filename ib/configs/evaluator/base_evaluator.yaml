@@ -6,3 +6,4 @@ metric_names:
     - chamfer
     - iou
     - fourier_freq
+    - normals

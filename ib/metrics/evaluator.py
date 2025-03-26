@@ -9,6 +9,7 @@ from torch import nn
 from ib.metrics.chamfer_distance import ChamferDistance
 from ib.metrics.fourier_freq import FourierFrequency
 from ib.metrics.iou import Iou
+from ib.metrics.normal_distance import NormalCosineSimilarity
 from ib.models.decoders import SdfDecoder
 from ib.utils.geometry import mesh_to_pointcloud, sdf_to_pointcloud
 from ib.utils.pipeline import generate_output_mesh_path
@@ -19,6 +20,7 @@ class Metric(str, Enum):
     chamfer = "chamfer"
     iou = "iou"
     ff = "fourier_freq"
+    normals = "normals"
 
 
 class FileType(str, Enum):
@@ -50,6 +52,16 @@ def _resolve_metrics(file_path: Path, metric: list[Metric], num_samples: int) ->
 
     if Metric.ff in metric and file_type is FileType.sdf:
         mapping[Metric.ff] = FourierFrequency(file_path)
+
+    if Metric.normals in metric:
+        if file_type is FileType.pc:
+            mapping[Metric.normals] = NormalCosineSimilarity.from_pointcloud_path(
+                file_path, num_samples
+            )
+        elif file_type is FileType.sdf:
+            mapping[Metric.normals] = NormalCosineSimilarity.from_sdf_path(
+                file_path, num_samples
+            )
 
     return mapping
 
@@ -128,18 +140,24 @@ class Evaluator:
             )
             decoder.save(output_path)
 
-        if Metric.chamfer in self.metrics:
+        # Run once for Chamfer and Normal distances.
+        if Metric.chamfer in self.metrics or Metric.normals in self.metrics:
             if self.file_type is FileType.pc:
-                pred_verts, _ = mesh_to_pointcloud(
+                pred_verts, pred_normals = mesh_to_pointcloud(
                     decoder.vertices, decoder.faces, self.num_samples
                 )
             elif self.file_type is FileType.sdf:
-                pred_verts, _ = sdf_to_pointcloud(decoder.sdf, self.num_samples)
+                pred_verts, pred_normals = sdf_to_pointcloud(
+                    decoder.sdf, self.num_samples
+                )
 
         results = {}
 
         if Metric.chamfer in self.metrics:
             results.update(self.metrics[Metric.chamfer](pred_verts))
+
+        if Metric.normals in self.metrics:
+            results.update(self.metrics[Metric.normals](pred_verts, pred_normals))
 
         if Metric.iou in self.metrics:
             results.update(self.metrics[Metric.iou](decoder.sdf))
