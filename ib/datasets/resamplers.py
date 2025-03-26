@@ -50,7 +50,7 @@ def sample_points_in_triangles(vertices, faces, sampled_faces):
 
     sampled_points = u * v0 + v * v1 + w * v2
 
-    return sampled_points
+    return sampled_points.astype(np.float32)
 
 
 class Resampler:
@@ -130,11 +130,12 @@ class Resampler:
         """Helper function to sample points and normals from faces."""
 
         if face_probs is None:
-            sampled_faces = range(len(self.faces))
+            sampled_faces = np.array(range(len(self.faces)))
         else:
             sampled_faces = np.random.choice(
                 len(self.faces), size=num_samples, p=face_probs
             )
+        sampled_faces = sampled_faces.astype(np.int32)
 
         face_normals = compute_face_normals(self.vertices, self.faces)
         sampled_points = sample_points_in_triangles(
