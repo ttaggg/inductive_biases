@@ -8,6 +8,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from ib.models.base_model import BaseModel
+from ib.utils.callbacks import EvaluatorCallback, SaveModelCallback
 from ib.utils.logging_module import logging
 from ib.utils.tensorboard import CustomTensorBoardLogger
 
@@ -44,8 +45,12 @@ def create_model(model_cfg: DictConfig) -> nn.Module:
     return model
 
 
-def create_trainer(trainer_cfg: DictConfig) -> L.Trainer:
+def create_trainer(trainer_cfg: DictConfig, eval_cfg: DictConfig) -> L.Trainer:
     """Configure trainer."""
+
+    evaluator_callback = EvaluatorCallback(eval_cfg)
+    lr_monitor_callback = LearningRateMonitor(logging_interval="epoch")
+    save_model_callback = SaveModelCallback()
 
     trainer = L.Trainer(
         # Flags.
@@ -57,7 +62,11 @@ def create_trainer(trainer_cfg: DictConfig) -> L.Trainer:
         logger=CustomTensorBoardLogger(
             save_dir=trainer_cfg.paths.lightning_logs, name="", version=""
         ),
-        callbacks=[LearningRateMonitor(logging_interval="epoch")],
+        callbacks=[
+            lr_monitor_callback,
+            save_model_callback,
+            evaluator_callback,
+        ],
         enable_checkpointing=False,
         # Debug.
         fast_dev_run=trainer_cfg.fast_dev_run,

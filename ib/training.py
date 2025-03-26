@@ -33,7 +33,7 @@ def training(ctx: typer.Context) -> None:
     model = create_model(cfg.model)
 
     # Create the trainer.
-    trainer = create_trainer(cfg.trainer)
+    trainer = create_trainer(cfg.trainer, cfg.evaluator)
 
     # Run training.
     logging.stage("Running training.")
