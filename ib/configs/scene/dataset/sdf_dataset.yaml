@@ -3,3 +3,4 @@ file_path: ${scene.file_path}
 batch_size: ${trainer.batch_size}
 off_surface_ratio: 0.1
 clip_sdf: 0.05
+sdf_threshold_coeff: 2.0

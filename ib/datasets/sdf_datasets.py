@@ -15,6 +15,7 @@ class SdfDataset(Dataset):
         batch_size: int,
         off_surface_ratio: float,
         clip_sdf: float = np.inf,
+        sdf_threshold_coeff: float = 2.0,
     ) -> None:
         self.sdf = np.load(file_path)
         self.dim = self.sdf.shape
@@ -25,7 +26,7 @@ class SdfDataset(Dataset):
         self.sdf = np.clip(self.sdf, -clip_sdf, clip_sdf)
 
         # Precompute for future.
-        sdf_threshold = 2.0 * (2.0 / self.dim[0])
+        sdf_threshold = sdf_threshold_coeff * (2.0 / self.dim[0])
         self.surface_indices = np.array(np.where(np.abs(self.sdf) < sdf_threshold)).T
 
         logging.info(f"Dataset size: {self.num_samples} samples.")
