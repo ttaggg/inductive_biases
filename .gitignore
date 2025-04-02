@@ -1,11 +1,7 @@
 # uv
-.python-version
 uv.lock
 .venv
 *.egg-info/
-
-# Outputs
-outputs
 
 # Python
 *.pyc
@@ -14,4 +10,4 @@ outputs
 
 # Misc
 **/.DS_Store
-
+.cursor
