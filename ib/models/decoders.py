@@ -1,10 +1,5 @@
 """INR decoders."""
 
-import os
-
-# Fix the conflict between OpenMP versions for PyTorch and Open3D
-os.environ["OMP_NUM_THREADS"] = "1"
-
 from pathlib import Path
 
 import numpy as np

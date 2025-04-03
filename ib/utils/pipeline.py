@@ -90,7 +90,7 @@ def initialize_directories(output_dir_root: str, run_name: str) -> SimpleNamespa
 
     output_dir_base = f"{date.today().strftime('%y-%m-%d')}_{run_name}"
     output_dir = Path(output_dir_root) / output_dir_base
-    resolve_and_expand_path(output_dir)
+    output_dir = resolve_and_expand_path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Determine the next version

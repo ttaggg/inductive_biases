@@ -1,5 +1,7 @@
 """Custom logging module."""
 
+# TODO(oleg): refactor this, this is not okay.
+
 import logging as default_logging
 import sys
 from pathlib import Path
