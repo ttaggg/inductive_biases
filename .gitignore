@@ -8,6 +8,9 @@ uv.lock
 **/__pycache__
 \.*.py%%
 
+# Environment
+.env
+
 # Misc
 **/.DS_Store
 .cursor

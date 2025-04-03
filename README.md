@@ -54,3 +54,14 @@ ib/configs
 └── trainer
     └── base_trainer.yaml
 ```
+
+## WandB Integration
+
+The project also supports Weights & Biases for experiment tracking. To use WandB:
+
+1. Create a `.env` file in the project root (copy from `.env.example`)
+2. Add your WandB API key to the `.env` file:
+   ```
+   WANDB_API_KEY=your_wandb_api_key_here
+   ```
+If the WandB API key is not found, the pipeline will still use TensorBoard.

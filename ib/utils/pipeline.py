@@ -8,6 +8,7 @@ from functools import wraps
 from pathlib import Path
 from types import SimpleNamespace
 
+import dotenv
 import numpy as np
 import torch
 from hydra import initialize, compose
@@ -124,6 +125,9 @@ def initialize_directories(output_dir_root: str, run_name: str) -> SimpleNamespa
 def initialize_run(ctx: Context) -> DictConfig:
     """Load Hydra configs, initialize output directory,
     set logging file, set torch float32 matmul precision, set seed."""
+
+    # Load environment variables.
+    dotenv.load_dotenv(".env")
 
     # Parse config, initialize directories.
     with initialize(config_path="../configs", version_base=None):

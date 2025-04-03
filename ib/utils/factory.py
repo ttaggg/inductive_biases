@@ -1,11 +1,15 @@
 """Create various objects."""
 
+import os
+
 import lightning as L
 from hydra.utils import instantiate
 from lightning.pytorch.callbacks import LearningRateMonitor
+from lightning.pytorch.loggers import WandbLogger
 from omegaconf import DictConfig
 from torch import nn
 from torch.utils.data import DataLoader
+import wandb
 
 from ib.models.base_model import BaseModel
 from ib.utils.callbacks import EvaluatorCallback, SaveModelCallback
@@ -52,6 +56,23 @@ def create_trainer(trainer_cfg: DictConfig, eval_cfg: DictConfig) -> L.Trainer:
     lr_monitor_callback = LearningRateMonitor(logging_interval="epoch")
     save_model_callback = SaveModelCallback()
 
+    loggers = [
+        CustomTensorBoardLogger(
+            save_dir=trainer_cfg.paths.lightning_logs, name="", version=""
+        )
+    ]
+    if "WANDB_API_KEY" in os.environ and os.environ["WANDB_API_KEY"]:
+        wandb.login()
+        loggers.append(
+            WandbLogger(
+                name=trainer_cfg.run_name,
+                save_dir=trainer_cfg.paths.lightning_logs,
+                version="",
+                project=os.environ.get("WANDB_PROJECT", None),
+                entity=os.environ.get("WANDB_ENTITY", None),
+            )
+        )
+
     trainer = L.Trainer(
         # Flags.
         accelerator=trainer_cfg.accelerator,
@@ -59,9 +80,7 @@ def create_trainer(trainer_cfg: DictConfig, eval_cfg: DictConfig) -> L.Trainer:
         max_epochs=trainer_cfg.max_epochs,
         gradient_clip_val=trainer_cfg.gradient_clip_val,
         # Callbacks and loggers.
-        logger=CustomTensorBoardLogger(
-            save_dir=trainer_cfg.paths.lightning_logs, name="", version=""
-        ),
+        logger=loggers,
         callbacks=[
             lr_monitor_callback,
             save_model_callback,

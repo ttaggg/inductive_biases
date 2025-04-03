@@ -18,5 +18,8 @@ limit_train_batches: null
 fast_dev_run: False
 seed: null
 
+# Logging
+run_name: ${run_name}
+
 # Paths
 paths: ${paths}
