@@ -131,3 +131,50 @@ def write_xyz(file_path: Path, points: np.ndarray, normals: np.ndarray) -> None:
     """Write XYZ pointcloud like SIREN authors."""
     point_cloud = np.concatenate([points, normals], axis=-1)
     np.savetxt(file_path, point_cloud)
+
+
+def write_ply(
+    file_path: Path,
+    points: np.ndarray,
+    normals: np.ndarray,
+    alpha_channel: Optional[np.ndarray] = None,
+) -> None:
+    """Write PLY pointcloud."""
+
+    # Define PLY dtype
+    dtype = [
+        ("x", "f4"),
+        ("y", "f4"),
+        ("z", "f4"),
+        ("nx", "f4"),
+        ("ny", "f4"),
+        ("nz", "f4"),
+    ]
+    if alpha_channel is not None:
+        dtype.extend(
+            [
+                ("red", "u1"),
+                ("green", "u1"),
+                ("blue", "u1"),
+                ("alpha", "u1"),
+            ]
+        )
+    ply_dtype = np.dtype(dtype)
+
+    # Build structured array
+    vertex_array = np.empty(len(points), dtype=ply_dtype)
+    vertex_array["x"] = points[:, 0]
+    vertex_array["y"] = points[:, 1]
+    vertex_array["z"] = points[:, 2]
+    vertex_array["nx"] = normals[:, 0]
+    vertex_array["ny"] = normals[:, 1]
+    vertex_array["nz"] = normals[:, 2]
+
+    if alpha_channel is not None:
+        vertex_array["red"] = 255.0
+        vertex_array["green"] = 0.0
+        vertex_array["blue"] = 0.0
+        vertex_array["alpha"] = alpha_channel
+
+    ply_el = PlyElement.describe(vertex_array, "vertex")
+    PlyData([ply_el], text=True).write(str(file_path))

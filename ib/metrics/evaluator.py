@@ -123,6 +123,11 @@ class Evaluator:
         is_training = model.training
         model.eval()
 
+        output_mesh_path = generate_output_mesh_path(
+            model.model_cfg.paths.saved_models / f"model_epoch_{current_epoch}.pt",
+            resolution,
+        )
+
         # Run once for all the metrics.
         try:
             decoder = SdfDecoder(model)
@@ -134,11 +139,7 @@ class Evaluator:
             return {}
 
         if save_mesh:
-            output_path = generate_output_mesh_path(
-                model.model_cfg.paths.saved_models / f"model_epoch_{current_epoch}.pt",
-                resolution,
-            )
-            decoder.save(output_path)
+            decoder.save(output_mesh_path)
 
         # Run once for Chamfer and Normal distances.
         if Metric.chamfer in self.metrics or Metric.normals in self.metrics:
@@ -152,12 +153,20 @@ class Evaluator:
                 )
 
         results = {}
+        if self.metrics is None:
+            return results
 
         if Metric.chamfer in self.metrics:
             results.update(self.metrics[Metric.chamfer](pred_verts))
 
         if Metric.normals in self.metrics:
-            results.update(self.metrics[Metric.normals](pred_verts, pred_normals))
+            results.update(
+                self.metrics[Metric.normals](
+                    pred_verts,
+                    pred_normals,
+                    output_mesh_path.parent / f"normals_closest_{current_epoch}.ply",
+                )
+            )
 
         if Metric.iou in self.metrics:
             results.update(self.metrics[Metric.iou](decoder.sdf))
