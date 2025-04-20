@@ -1,0 +1,8 @@
+# Scannet++, id: 8b5caf3398
+
+defaults:
+  - dataset: sparse_sdf_dataset
+
+name: scannet_sdf
+file_path: ${oc.env:HOME}/datasets/3d_scenes/scannet_sdf/initial_data_structured_1024.npz
+volume_size: 1024
