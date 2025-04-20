@@ -7,7 +7,7 @@ import numpy as np
 from scipy.spatial import KDTree
 
 from ib.utils.data import load_pointcloud, normalize_points_and_normals, write_ply
-from ib.utils.geometry import sdf_to_pointcloud
+from ib.utils.geometry import sdf_to_pointcloud, sparse_sdf_to_sdf_volume
 from ib.utils.logging_module import logging
 
 
@@ -31,6 +31,16 @@ class NormalCosineSimilarity:
     @classmethod
     def from_sdf_path(cls, sdf_path: Path, num_points: int):
         sdf = np.load(sdf_path)
+        vertices, normals = sdf_to_pointcloud(sdf, num_points)
+        return cls(vertices, normals, num_points)
+
+    @classmethod
+    def from_sparse_sdf_path(cls, sparse_sdf_path: Path, num_points: int):
+        sparse_data = np.load(sparse_sdf_path)
+        surface_coords = sparse_data["coords"].astype(np.int32)
+        surface_sdf = sparse_data["sdf"].astype(np.float32).reshape(-1, 1)
+        resolution = sparse_data.get("resolution", 1024)
+        sdf = sparse_sdf_to_sdf_volume(surface_coords, surface_sdf, resolution)
         vertices, normals = sdf_to_pointcloud(sdf, num_points)
         return cls(vertices, normals, num_points)
 

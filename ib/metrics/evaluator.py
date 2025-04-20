@@ -25,11 +25,18 @@ class Metric(str, Enum):
 
 class FileType(str, Enum):
     sdf = "sdf"
+    sparse_sdf = "sparse_sdf"
     pc = "pointcloud"
 
 
 def _resolve_file_type(file_path: Path):
-    return FileType.sdf if file_path.suffix == ".npy" else FileType.pc
+    match file_path.suffix:
+        case ".npy":
+            return FileType.sdf
+        case ".npz":
+            return FileType.sparse_sdf
+        case _:
+            return FileType.pc
 
 
 def _resolve_metrics(file_path: Path, metric: list[Metric], num_samples: int) -> dict:
@@ -46,6 +53,10 @@ def _resolve_metrics(file_path: Path, metric: list[Metric], num_samples: int) ->
             mapping[Metric.chamfer] = ChamferDistance.from_sdf_path(
                 file_path, num_samples
             )
+        elif file_type is FileType.sparse_sdf:
+            mapping[Metric.chamfer] = ChamferDistance.from_sparse_sdf_path(
+                file_path, num_samples
+            )
 
     if Metric.iou in metric and file_type is FileType.sdf:
         mapping[Metric.iou] = Iou(file_path)
@@ -60,6 +71,10 @@ def _resolve_metrics(file_path: Path, metric: list[Metric], num_samples: int) ->
             )
         elif file_type is FileType.sdf:
             mapping[Metric.normals] = NormalCosineSimilarity.from_sdf_path(
+                file_path, num_samples
+            )
+        elif file_type is FileType.sparse_sdf:
+            mapping[Metric.normals] = NormalCosineSimilarity.from_sparse_sdf_path(
                 file_path, num_samples
             )
 
@@ -147,7 +162,7 @@ class Evaluator:
                 pred_verts, pred_normals = mesh_to_pointcloud(
                     decoder.vertices, decoder.faces, self.num_samples
                 )
-            elif self.file_type is FileType.sdf:
+            elif self.file_type in {FileType.sdf, FileType.sparse_sdf}:
                 pred_verts, pred_normals = sdf_to_pointcloud(
                     decoder.sdf, self.num_samples
                 )
@@ -157,9 +172,11 @@ class Evaluator:
             return results
 
         if Metric.chamfer in self.metrics:
+            logging.info(f"Computing Chamfer distance.")
             results.update(self.metrics[Metric.chamfer](pred_verts))
 
         if Metric.normals in self.metrics:
+            logging.info(f"Computing Normal distance.")
             results.update(
                 self.metrics[Metric.normals](
                     pred_verts,
@@ -169,9 +186,11 @@ class Evaluator:
             )
 
         if Metric.iou in self.metrics:
+            logging.info(f"Computing IoU.")
             results.update(self.metrics[Metric.iou](decoder.sdf))
 
         if Metric.ff in self.metrics:
+            logging.info(f"Computing Fourier frequency.")
             results.update(self.metrics[Metric.ff](decoder.sdf))
 
         model.train(is_training)

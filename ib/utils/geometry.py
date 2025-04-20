@@ -31,3 +31,15 @@ def sdf_to_pointcloud(
     verts, faces = sdf_to_mesh(sdf)
     vertices, normals = mesh_to_pointcloud(verts, faces, num_points)
     return vertices, normals
+
+
+def sparse_sdf_to_sdf_volume(
+    surface_coords: np.ndarray,
+    surface_sdf: np.ndarray,
+    resolution: int,
+) -> np.ndarray:
+    surface_sdf = surface_sdf.flatten()
+    max_val = np.max(surface_sdf)
+    sdf = max_val * np.ones((resolution, resolution, resolution))
+    sdf[surface_coords[:, 0], surface_coords[:, 1], surface_coords[:, 2]] = surface_sdf
+    return sdf

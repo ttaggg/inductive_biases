@@ -1,8 +1,9 @@
 """Data related utils."""
 
 from pathlib import Path
-from plyfile import PlyData
-from typing import Callable
+from typing import Callable, Optional
+
+from plyfile import PlyData, PlyElement
 
 import numpy as np
 
