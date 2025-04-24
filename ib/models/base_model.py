@@ -33,7 +33,11 @@ class BaseModel(L.LightningModule):
         return loss
 
     def configure_optimizers(self) -> Optimizer:
-        optimizer = torch.optim.Adam(self.inr.parameters(), lr=self.model_cfg.lr)
+        optimizer = torch.optim.Adam(
+            self.inr.parameters(),
+            lr=self.model_cfg.lr,
+            weight_decay=self.model_cfg.weight_decay,
+        )
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer,
             T_max=self.model_cfg.max_epochs,
