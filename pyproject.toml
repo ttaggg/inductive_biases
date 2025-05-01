@@ -28,5 +28,6 @@ package = true
 [project.scripts]
 decoding = "ib.decoding:app"
 evaluation = "ib.evaluation:app"
+preprocessing = "ib.preprocessing:app"
 resampling = "ib.resampling:app"
 training = "ib.training:app"
