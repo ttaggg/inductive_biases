@@ -2,54 +2,13 @@
 
 from pathlib import Path
 from typing import Callable, Optional
-
-from plyfile import PlyData, PlyElement
+from typing_extensions import deprecated
 
 import numpy as np
+from plyfile import PlyData, PlyElement
 
 
-def filter_incorrect_normals(
-    points: np.ndarray,
-    normals: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
-    # Filter out invalid normals and points with zero normals.
-    correct_normals = np.logical_and(
-        np.linalg.norm(normals, axis=-1) != 0.0,
-        np.all(np.isfinite(normals), axis=-1),
-    )
-    return points[correct_normals], normals[correct_normals]
-
-
-def normalize_points_and_normals(
-    points: np.ndarray,
-    normals: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Normalizes points and normals.
-
-    Args:
-        points (np.ndarray): Array of points (x, y, z).
-        normals (np.ndarray): Array of normals (x, y, z).
-
-    Returns:
-        Tuple[np.ndarray, np.ndarray]:
-            - points (np.ndarray): Points in the (-1, 1) range with the original aspect ratio.
-            - normals (np.ndarray): Unit normals.
-    """
-
-    points, normals = filter_incorrect_normals(points, normals)
-    points -= np.mean(points, axis=0, keepdims=True)
-    # TODO(oleg): consider normalization without preserving aspect ratio.
-    coord_max = np.amax(points)
-    coord_min = np.amin(points)
-    points = (points - coord_min) / (coord_max - coord_min)
-    points -= 0.5
-    points *= 2.0
-
-    normals = normals / np.linalg.norm(normals, axis=-1, keepdims=True)
-
-    return points, normals
-
-
+@deprecated("Do not use obj files")
 def load_obj(
     file_path: str,
     field_func: dict[str, Callable],
@@ -80,30 +39,32 @@ def load_obj(
     return [np.array(parsed_data[key]) for key in field_func]
 
 
-def load_pointcloud(file_path: Path) -> tuple[np.ndarray, np.ndarray]:
+def load_pointcloud(file_path: Path) -> dict[str, np.ndarray]:
     if file_path.suffix == ".xyz":
-        vertices, normals = load_xyz(file_path)
+        pc_data = load_xyz(file_path)
     elif file_path.suffix == ".ply":
-        vertices, normals = load_ply(file_path)
+        pc_data = load_ply(file_path)
     else:
         raise ValueError(
             "Only .xyz and .ply are supported in evaluation, "
             f"given: {file_path.suffix}."
         )
-    return vertices, normals
+    return pc_data
 
 
-def load_ply(file_path: str) -> tuple[np.ndarray, np.ndarray]:
-    """Loads vertices and normals from a PLY file."""
+def load_ply(file_path: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Loads data from a PLY file."""
     ply_data = PlyData.read(file_path)
-    vertex_data = ply_data["vertex"]
-    points = np.vstack((vertex_data["x"], vertex_data["y"], vertex_data["z"])).T
-    normals = (
-        np.vstack((vertex_data["nx"], vertex_data["ny"], vertex_data["nz"])).T
-        if "nx" in vertex_data
-        else None
-    )
-    return points, normals
+    ply = ply_data["vertex"]
+    data = {}
+    data["points"] = np.vstack((ply["x"], ply["y"], ply["z"])).T
+    if "nx" in ply:
+        data["normals"] = np.vstack((ply["nx"], ply["ny"], ply["nz"])).T
+    if "red" in ply:
+        data["colors"] = np.vstack((ply["red"], ply["green"], ply["blue"])).T
+    if "label" in ply:
+        data["labels"] = ply["label"]
+    return data
 
 
 def load_xyz(file_path: str) -> tuple[np.ndarray, np.ndarray]:
@@ -114,6 +75,7 @@ def load_xyz(file_path: str) -> tuple[np.ndarray, np.ndarray]:
     return points, normals
 
 
+@deprecated("Do not use obj files")
 def write_obj(
     file_path: Path,
     field_data: dict[str, np.array],
@@ -142,7 +104,8 @@ def write_ply(
     file_path: Path,
     points: np.ndarray,
     normals: Optional[np.ndarray] = None,
-    alpha_channel: Optional[np.ndarray] = None,
+    colors: Optional[np.ndarray] = None,
+    labels: Optional[np.ndarray] = None,
 ) -> None:
     """Write PLY pointcloud."""
 
@@ -160,13 +123,18 @@ def write_ply(
                 ("nz", "f4"),
             ]
         )
-    if alpha_channel is not None:
+    if colors is not None:
         dtype.extend(
             [
                 ("red", "u1"),
                 ("green", "u1"),
                 ("blue", "u1"),
-                ("alpha", "u1"),
+            ]
+        )
+    if labels is not None:
+        dtype.extend(
+            [
+                ("label", "u1"),
             ]
         )
     ply_dtype = np.dtype(dtype)
@@ -180,11 +148,12 @@ def write_ply(
         vertex_array["nx"] = normals[:, 0]
         vertex_array["ny"] = normals[:, 1]
         vertex_array["nz"] = normals[:, 2]
-    if alpha_channel is not None:
-        vertex_array["red"] = 255.0
-        vertex_array["green"] = 0.0
-        vertex_array["blue"] = 0.0
-        vertex_array["alpha"] = alpha_channel
+    if colors is not None:
+        vertex_array["red"] = colors[:, 0]
+        vertex_array["green"] = colors[:, 1]
+        vertex_array["blue"] = colors[:, 2]
+    if labels is not None:
+        vertex_array["label"] = labels
 
     ply_el = PlyElement.describe(vertex_array, "vertex")
-    PlyData([ply_el], text=True).write(str(file_path))
+    PlyData([ply_el]).write(str(file_path))

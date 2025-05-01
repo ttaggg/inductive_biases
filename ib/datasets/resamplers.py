@@ -5,8 +5,9 @@ from typing import Optional
 
 import numpy as np
 
-from ib.utils.data import filter_incorrect_normals, load_obj, write_obj
+from ib.utils.data import load_obj, write_obj
 from ib.utils.logging_module import logging
+from ib.utils.pointcloud import filter_incorrect_normals
 
 
 class SamplingException(Exception):

@@ -22,9 +22,10 @@ class ChamferDistance:
 
     @classmethod
     def from_pointcloud_path(cls, pointcloud_path: Path, num_points: int):
-        vertices, normals = load_pointcloud(pointcloud_path)
-        vertices, _ = normalize_points_and_normals(vertices, normals)
-        return cls(vertices, num_points)
+        data = load_pointcloud(pointcloud_path)
+        vertices, _ = normalize_points_and_normals(data["points"], data["normals"])
+        labels = data["labels"]
+        return cls(vertices, num_points, labels)
 
     @classmethod
     def from_sdf_path(cls, sdf_path: Path, num_points: int):

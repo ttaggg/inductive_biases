@@ -5,8 +5,9 @@ from abc import abstractmethod
 import numpy as np
 from torch.utils.data import Dataset
 
-from ib.utils.data import load_obj, load_ply, load_xyz, normalize_points_and_normals
+from ib.utils.data import load_obj, load_ply, load_xyz
 from ib.utils.logging_module import logging
+from ib.utils.pointcloud import normalize_points_and_normals
 
 
 class PointCloudDataset(Dataset):
@@ -18,8 +19,10 @@ class PointCloudDataset(Dataset):
         batch_size: int,
         off_surface_ratio: float,
     ) -> None:
-        points, normals = self.load(file_path)
-        self.points, self.normals = normalize_points_and_normals(points, normals)
+        data = self.load(file_path)
+        self.points, self.normals = normalize_points_and_normals(
+            data["points"], data["normals"]
+        )
         self.batch_size = batch_size
         self.off_surface_ratio = off_surface_ratio
 
