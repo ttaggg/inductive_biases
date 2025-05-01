@@ -11,9 +11,14 @@ from tqdm import tqdm
 from ib.utils.logging_module import logging
 
 
-def save_model(model: L.LightningModule, output_dir: Path, epoch: int) -> None:
+def save_model(
+    model: L.LightningModule,
+    output_dir: Path,
+    run_name: str,
+    epoch: int,
+) -> None:
     """Save the whole model."""
-    model_path = output_dir / f"model_epoch_{epoch}.pt"
+    model_path = output_dir / f"model_{run_name}_epoch_{epoch}.pt"
     torch.save(model, model_path)
 
 

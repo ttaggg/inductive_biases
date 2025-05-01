@@ -59,10 +59,12 @@ class SaveModelCallback(L.Callback):
     ) -> None:
         cfg = pl_module.model_cfg
         epoch = trainer.current_epoch
+        run_name = pl_module.model_cfg.run_name.replace("/", "_")
         if epoch > 0 and epoch % cfg.save_model_every_n_epochs == 0:
-            save_model(pl_module, cfg.paths.saved_models, epoch)
+            save_model(pl_module, cfg.paths.saved_models, run_name, epoch)
 
     def on_train_end(self, trainer: L.Trainer, pl_module: L.LightningModule) -> None:
         cfg = pl_module.model_cfg
         epoch = trainer.current_epoch
-        save_model(pl_module, cfg.paths.saved_models, epoch)
+        run_name = pl_module.model_cfg.run_name.replace("/", "_")
+        save_model(pl_module, cfg.paths.saved_models, run_name, epoch)
