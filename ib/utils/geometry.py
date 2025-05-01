@@ -43,3 +43,27 @@ def sparse_sdf_to_sdf_volume(
     sdf = max_val * np.ones((resolution, resolution, resolution))
     sdf[surface_coords[:, 0], surface_coords[:, 1], surface_coords[:, 2]] = surface_sdf
     return sdf
+
+
+def orient_mesh(
+    mesh: o3d.geometry.TriangleMesh,
+    outside_pt: list = [0.0, 0.0, 0.0],
+) -> None:
+
+    outside_pt = np.array(outside_pt, dtype=np.float32)
+    verts = np.asarray(mesh.vertices)
+    tris = np.asarray(mesh.triangles)
+    centres = verts[tris].mean(axis=1)
+
+    tri_normals = np.asarray(mesh.triangle_normals)
+    to_outside = centres - outside_pt
+
+    sign = np.einsum("ij,ij->i", tri_normals, to_outside)
+
+    # If most triangles look inward flip the whole component.
+    if sign.mean() < 0:
+        tris_flipped = tris.copy()
+        tris_flipped[:, [1, 2]] = tris_flipped[:, [2, 1]]
+        mesh.triangles = o3d.utility.Vector3iVector(tris_flipped)
+        mesh.compute_triangle_normals()
+        mesh.compute_vertex_normals()

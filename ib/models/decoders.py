@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import open3d as o3d
 
-from ib.utils.geometry import sdf_to_mesh
+from ib.utils.geometry import sdf_to_mesh, orient_mesh
 from ib.utils.logging_module import logging
 from ib.utils.model import query_model
 
@@ -42,7 +42,10 @@ class SdfDecoder:
         self.mesh = o3d.geometry.TriangleMesh()
         self.mesh.vertices = o3d.utility.Vector3dVector(verts.astype(np.float64))
         self.mesh.triangles = o3d.utility.Vector3iVector(faces.astype(np.int32))
+        self.mesh.compute_triangle_normals()
         self.mesh.compute_vertex_normals()
+        orient_mesh(self.mesh)
+
         logging.info(f"Mesh contains {len(verts)} vertices and {len(faces)} faces.")
 
     def save(self, file_path: Path) -> None:
