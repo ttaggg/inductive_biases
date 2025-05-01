@@ -28,9 +28,31 @@ class BaseModel(L.LightningModule):
     def training_step(self, model_inputs: dict[str, torch.Tensor], _) -> torch.Tensor:
         losses = self.loss_fn(self.inr, model_inputs)
         loss = torch.stack(list(losses.values())).mean()
+        self.log_weights()
+        self.log_grads()
         self.log("losses/total", loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log_dict(losses, on_step=False, on_epoch=True, prog_bar=True)
         return loss
+
+    def log_weights(self) -> None:
+        for name, param in self.inr.named_parameters():
+            if param.requires_grad:
+                self.log(
+                    f"weights_norm/{name}",
+                    torch.linalg.norm(param),
+                    on_step=False,
+                    on_epoch=True,
+                )
+
+    def log_grads(self) -> None:
+        for name, param in self.inr.named_parameters():
+            if param.requires_grad and param.grad is not None:
+                self.log(
+                    f"grads_norm/{name}",
+                    torch.linalg.norm(param.grad),
+                    on_step=False,
+                    on_epoch=True,
+                )
 
     def configure_optimizers(self) -> Optimizer:
         optimizer = torch.optim.Adam(
