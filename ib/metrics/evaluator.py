@@ -138,7 +138,9 @@ class Evaluator:
         is_training = model.training
         model.eval()
 
-        run_name = model.model_cfg.run_name.replace("/", "_")
+        run_name = ""
+        if hasattr(model.model_cfg, "run_name"):
+            run_name = model.model_cfg.run_name.replace("/", "_")
         output_mesh_path = generate_output_mesh_path(
             model.model_cfg.paths.saved_models
             / f"model_{run_name}_epoch_{current_epoch}.pt",
