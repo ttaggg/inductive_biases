@@ -6,27 +6,38 @@ from typing import Optional
 import numpy as np
 from scipy.spatial import KDTree
 
-from ib.utils.data import load_pointcloud, normalize_points_and_normals, write_ply
+from ib.utils.data import load_pointcloud, write_ply
 from ib.utils.geometry import sdf_to_pointcloud, sparse_sdf_to_sdf_volume
 from ib.utils.logging_module import logging
+from ib.utils.pointcloud import normalize_points_and_normals
 
 
 class NormalCosineSimilarity:
     """Bidirectional Normal Cosine Similarity metric."""
 
-    def __init__(self, vertices: np.ndarray, normals: np.ndarray, num_points: int):
+    def __init__(
+        self,
+        vertices: np.ndarray,
+        normals: np.ndarray,
+        num_points: int,
+        labels: np.ndarray = None,
+    ):
         # Sample uniformly.
         num_points = min(num_points, len(vertices))
         indices = np.random.choice(len(vertices), num_points, replace=False)
         self.vertices = vertices[indices]
         self.normals = normals[indices]
+        self.labels = labels[indices] if labels is not None else None
         self.tree = KDTree(self.vertices)
 
     @classmethod
     def from_pointcloud_path(cls, pointcloud_path: Path, num_points: int):
-        vertices, normals = load_pointcloud(pointcloud_path)
-        vertices, normals = normalize_points_and_normals(vertices, normals)
-        return cls(vertices, normals, num_points)
+        data = load_pointcloud(pointcloud_path)
+        vertices, normals = normalize_points_and_normals(
+            data["points"], data["normals"]
+        )
+        labels = data["labels"]
+        return cls(vertices, normals, num_points, labels)
 
     @classmethod
     def from_sdf_path(cls, sdf_path: Path, num_points: int):
@@ -91,9 +102,9 @@ class NormalCosineSimilarity:
         pred_vertices = pred_vertices[mask]
         pred_normals = pred_normals[mask]
         norm_error = 1 - norm_sims
-        alpha_channel = (norm_error * 255).astype(np.uint8)
+        colors = (norm_error.reshape(-1, 1) * [255, 0, 0]).astype(np.uint8)
         # Write the PLY file.
-        write_ply(save_path, pred_vertices, pred_normals, alpha_channel)
+        write_ply(save_path, pred_vertices, pred_normals, colors)
         logging.info(f"Saved pointcloud PLY to {save_path}")
 
     def __call__(
@@ -136,7 +147,18 @@ class NormalCosineSimilarity:
                 save_path,
             )
 
-        return {
+        results = {
             "metrics/normal_similarity_radius": float(radius_sims),
             "metrics/normal_similarity_closest": float(closest_sims),
         }
+
+        if self.labels is not None:
+            mask = self.labels > 0
+            results["metrics/normal_similarity_t2p_closest_low_res"] = float(
+                closest_sims_target_to_pred[mask].mean()
+            )
+            results["metrics/normal_similarity_t2p_closest_others"] = float(
+                closest_sims_target_to_pred[~mask].mean()
+            )
+
+        return results

@@ -181,8 +181,8 @@ class Evaluator:
                 self.metrics[Metric.normals](
                     pred_verts,
                     pred_normals,
-                    save_path=Path(output_mesh_path).parent
-                    / f"normals_closest_{current_epoch}.ply",
+                    # save_path=Path(output_mesh_path).parent
+                    # / f"normals_closest_{current_epoch}.ply",
                 )
             )
 
