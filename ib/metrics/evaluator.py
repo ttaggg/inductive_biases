@@ -87,7 +87,7 @@ class Evaluator:
         self,
         file_path: Path,
         metric: list[Metric],
-        num_samples: int = 1_000_000,
+        num_samples: int = 10_000_000,
     ) -> None:
         self.file_type = _resolve_file_type(file_path)
         self.metrics = _resolve_metrics(file_path, metric, num_samples)
@@ -181,7 +181,8 @@ class Evaluator:
                 self.metrics[Metric.normals](
                     pred_verts,
                     pred_normals,
-                    output_mesh_path.parent / f"normals_closest_{current_epoch}.ply",
+                    save_path=Path(output_mesh_path).parent
+                    / f"normals_closest_{current_epoch}.ply",
                 )
             )
 

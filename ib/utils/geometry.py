@@ -1,6 +1,7 @@
 """Utils to convert betweeen data types."""
 
 import numpy as np
+import open3d as o3d
 from skimage import measure
 
 from ib.datasets.resamplers import SimpleResampler
