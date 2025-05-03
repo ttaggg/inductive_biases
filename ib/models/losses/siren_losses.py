@@ -20,10 +20,17 @@ def compute_gradients(pred_sdf: torch.Tensor, coords: torch.Tensor) -> torch.Ten
 
 
 class SirenSdfLoss(nn.Module):
-    def __init__(self, lambda_1: float, lambda_2: float, lambda_3: float) -> None:
-        self.lambda_1 = lambda_1
-        self.lambda_2 = lambda_2
-        self.lambda_3 = lambda_3
+    def __init__(
+        self,
+        lambda_grad: float,
+        lambda_sdf: float,
+        lambda_normal: float,
+        lambda_inter: float,
+    ) -> None:
+        self.lambda_grad = lambda_grad
+        self.lambda_sdf = lambda_sdf
+        self.lambda_normal = lambda_normal
+        self.lambda_inter = lambda_inter
         super().__init__()
 
     def forward(
@@ -67,8 +74,8 @@ class SirenSdfLoss(nn.Module):
         inter_constraint = inter_constraint.mean()
 
         return {
-            "losses/grad": grad_constraint * self.lambda_1,
-            "losses/sdf": sdf_constraint * self.lambda_2,
-            "losses/normal": normal_constraint * self.lambda_3,
-            "losses/inter": inter_constraint * self.lambda_3,
+            "losses/grad": grad_constraint * self.lambda_grad,
+            "losses/sdf": sdf_constraint * self.lambda_sdf,
+            "losses/normal": normal_constraint * self.lambda_normal,
+            "losses/inter": inter_constraint * self.lambda_inter,
         }
