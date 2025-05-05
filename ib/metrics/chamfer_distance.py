@@ -7,7 +7,7 @@ from scipy.spatial import KDTree
 
 from ib.utils.data import load_pointcloud
 from ib.utils.geometry import sdf_to_pointcloud, sparse_sdf_to_sdf_volume
-from ib.utils.pointcloud import normalize_points_and_normals
+from ib.utils.pointcloud import filter_incorrect_normals
 
 
 class ChamferDistance:
@@ -30,7 +30,7 @@ class ChamferDistance:
     @classmethod
     def from_pointcloud_path(cls, pointcloud_path: Path, num_points: int):
         data = load_pointcloud(pointcloud_path)
-        vertices, _ = normalize_points_and_normals(data["points"], data["normals"])
+        vertices, _ = filter_incorrect_normals(data["points"], data["normals"])
         labels = data.get("labels", None)
         return cls(vertices, num_points, labels)
 

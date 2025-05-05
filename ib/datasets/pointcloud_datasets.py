@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 
 from ib.utils.data import load_obj, load_ply, load_xyz
 from ib.utils.logging_module import logging
-from ib.utils.pointcloud import normalize_points_and_normals
+from ib.utils.pointcloud import filter_incorrect_normals
 
 
 class PointCloudDataset(Dataset):
@@ -20,7 +20,7 @@ class PointCloudDataset(Dataset):
         off_surface_ratio: float,
     ) -> None:
         data = self.load(file_path)
-        self.points, self.normals = normalize_points_and_normals(
+        self.points, self.normals = filter_incorrect_normals(
             data["points"], data["normals"]
         )
         self.batch_size = batch_size

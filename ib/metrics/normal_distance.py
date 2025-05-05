@@ -9,7 +9,7 @@ from scipy.spatial import KDTree
 from ib.utils.data import load_pointcloud, write_ply
 from ib.utils.geometry import sdf_to_pointcloud, sparse_sdf_to_sdf_volume
 from ib.utils.logging_module import logging
-from ib.utils.pointcloud import normalize_points_and_normals
+from ib.utils.pointcloud import filter_incorrect_normals
 
 
 class NormalCosineSimilarity:
@@ -33,9 +33,7 @@ class NormalCosineSimilarity:
     @classmethod
     def from_pointcloud_path(cls, pointcloud_path: Path, num_points: int):
         data = load_pointcloud(pointcloud_path)
-        vertices, normals = normalize_points_and_normals(
-            data["points"], data["normals"]
-        )
+        vertices, normals = filter_incorrect_normals(data["points"], data["normals"])
         labels = data["labels"]
         return cls(vertices, normals, num_points, labels)
 

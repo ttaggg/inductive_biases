@@ -85,34 +85,3 @@ def filter_incorrect_normals(
         np.all(np.isfinite(normals), axis=-1),
     )
     return points[correct_normals], normals[correct_normals]
-
-
-@deprecated("Should not be used anywhere.")
-def normalize_points_and_normals(
-    points: np.ndarray,
-    normals: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Normalizes points and normals.
-
-    Args:
-        points (np.ndarray): Array of points (x, y, z).
-        normals (np.ndarray): Array of normals (x, y, z).
-
-    Returns:
-        Tuple[np.ndarray, np.ndarray]:
-            - points (np.ndarray): Points in the (-1, 1) range with the original aspect ratio.
-            - normals (np.ndarray): Unit normals.
-    """
-
-    points, normals = filter_incorrect_normals(points, normals)
-    points -= np.mean(points, axis=0, keepdims=True)
-    # TODO(oleg): consider normalization without preserving aspect ratio.
-    coord_max = np.amax(points)
-    coord_min = np.amin(points)
-    points = (points - coord_min) / (coord_max - coord_min)
-    points -= 0.5
-    points *= 2.0
-
-    normals = normals / np.linalg.norm(normals, axis=-1, keepdims=True)
-
-    return points, normals
