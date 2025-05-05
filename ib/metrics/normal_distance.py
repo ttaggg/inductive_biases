@@ -111,37 +111,33 @@ class NormalCosineSimilarity:
         pred_normals: np.ndarray,
         radius: float = 0.0025,
         save_path: Optional[Path] = None,
-    ) -> dict:
+    ) -> dict[str, float]:
         pred_tree = KDTree(pred_vertices)
 
         # Compare with the best normal in some radius.
-        radius_sims_target_to_pred = self._compute_directional_similarity_radius(
+        radius_sims_t2p = self._compute_directional_similarity_radius(
             self.tree, self.normals, pred_tree, pred_normals, radius
         )
-        radius_sims_pred_to_target = self._compute_directional_similarity_radius(
+        radius_sims_p2t = self._compute_directional_similarity_radius(
             pred_tree, pred_normals, self.tree, self.normals, radius
         )
         # Compare with the closest normal.
-        closest_sims_target_to_pred = self._compute_directional_similarity_closest(
+        closest_sims_t2p = self._compute_directional_similarity_closest(
             self.vertices, self.normals, pred_tree, pred_normals
         )
-        closest_sims_pred_to_target = self._compute_directional_similarity_closest(
+        closest_sims_p2t = self._compute_directional_similarity_closest(
             pred_vertices, pred_normals, self.tree, self.normals
         )
 
         # Take mean of both directions.
-        radius_sims = (
-            radius_sims_pred_to_target.mean() + radius_sims_target_to_pred.mean()
-        ) / 2.0
-        closest_sims = (
-            closest_sims_pred_to_target.mean() + closest_sims_target_to_pred.mean()
-        ) / 2.0
+        radius_sims = (radius_sims_p2t.mean() + radius_sims_t2p.mean()) / 2.0
+        closest_sims = (closest_sims_p2t.mean() + closest_sims_t2p.mean()) / 2.0
 
         if save_path is not None:
             self.visualize_and_save(
                 pred_vertices,
                 pred_normals,
-                closest_sims_pred_to_target,
+                closest_sims_p2t,
                 save_path,
             )
 
@@ -151,12 +147,32 @@ class NormalCosineSimilarity:
         }
 
         if self.labels is not None:
-            mask = self.labels > 0
-            results["metrics/normal_similarity_t2p_closest_low_res"] = float(
-                closest_sims_target_to_pred[mask].mean()
+            mask_self = self.labels > 0
+            _, idx_pred = self.tree.query(pred_vertices, workers=-1)
+            mask_pred = self.labels[idx_pred] > 0
+
+            # Low-resolution regions.
+            low_res_t2p = closest_sims_t2p[mask_self].mean()
+            low_res_p2t = closest_sims_p2t[mask_pred].mean()
+            results["metrics/normal_similarity_closest_low_res_t2p"] = float(
+                low_res_t2p
             )
-            results["metrics/normal_similarity_t2p_closest_others"] = float(
-                closest_sims_target_to_pred[~mask].mean()
+            results["metrics/normal_similarity_closest_low_res_p2t"] = float(
+                low_res_p2t
+            )
+            results["metrics/normal_similarity_closest_low_res"] = float(
+                (low_res_t2p + low_res_p2t) / 2.0
+            )
+
+            # Other regions.
+            mask_self_others = ~mask_self
+            mask_pred_others = ~mask_pred
+            others_t2p = closest_sims_t2p[mask_self_others].mean()
+            others_p2t = closest_sims_p2t[mask_pred_others].mean()
+            results["metrics/normal_similarity_closest_others_t2p"] = float(others_t2p)
+            results["metrics/normal_similarity_closest_others_p2t"] = float(others_p2t)
+            results["metrics/normal_similarity_closest_others"] = float(
+                (others_t2p + others_p2t) / 2.0
             )
 
         return results
