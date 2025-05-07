@@ -26,11 +26,13 @@ class SirenSdfLoss(nn.Module):
         lambda_sdf: float,
         lambda_normal: float,
         lambda_inter: float,
+        constant_inter: float,
     ) -> None:
         self.lambda_grad = lambda_grad
         self.lambda_sdf = lambda_sdf
         self.lambda_normal = lambda_normal
         self.lambda_inter = lambda_inter
+        self.constant_inter = constant_inter
         super().__init__()
 
     def forward(
@@ -69,7 +71,7 @@ class SirenSdfLoss(nn.Module):
         inter_constraint = torch.where(
             on_surface_mask,
             torch.zeros_like(pred_sdf),
-            torch.exp(-1e2 * torch.abs(pred_sdf)),
+            torch.exp(-self.constant_inter * torch.abs(pred_sdf)),
         )
         inter_constraint = inter_constraint.mean()
 

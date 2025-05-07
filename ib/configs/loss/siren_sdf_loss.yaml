@@ -3,3 +3,4 @@ lambda_grad: 50
 lambda_sdf: 3000
 lambda_normal: 100
 lambda_inter: 100
+constant_inter: 100
