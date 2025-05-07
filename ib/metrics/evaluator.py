@@ -6,78 +6,41 @@ from pathlib import Path
 import torch
 from torch import nn
 
+from ib.metrics.combined_metric import CombinedPointcloudMetric
 from ib.metrics.chamfer_distance import ChamferDistance
 from ib.metrics.fourier_freq import FourierFrequency
-from ib.metrics.iou import Iou
 from ib.metrics.normal_distance import NormalCosineSimilarity
 from ib.models.decoders import SdfDecoder
-from ib.utils.geometry import mesh_to_pointcloud, sdf_to_pointcloud
+from ib.utils.data import load_pointcloud
+from ib.utils.geometry import mesh_to_pointcloud
 from ib.utils.pipeline import generate_output_mesh_path
 from ib.utils.logging_module import logging
 
 
 class Metric(str, Enum):
     chamfer = "chamfer"
-    iou = "iou"
     ff = "fourier_freq"
     normals = "normals"
-
-
-class FileType(str, Enum):
-    sdf = "sdf"
-    sparse_sdf = "sparse_sdf"
-    pc = "pointcloud"
-
-
-def _resolve_file_type(file_path: Path):
-    match file_path.suffix:
-        case ".npy":
-            return FileType.sdf
-        case ".npz":
-            return FileType.sparse_sdf
-        case _:
-            return FileType.pc
+    combined = "combined"
 
 
 def _resolve_metrics(file_path: Path, metric: list[Metric], num_samples: int) -> dict:
-
-    file_type = _resolve_file_type(file_path)
     mapping = {}
-
     if Metric.chamfer in metric:
-        if file_type is FileType.pc:
-            mapping[Metric.chamfer] = ChamferDistance.from_pointcloud_path(
-                file_path, num_samples
-            )
-        elif file_type is FileType.sdf:
-            mapping[Metric.chamfer] = ChamferDistance.from_sdf_path(
-                file_path, num_samples
-            )
-        elif file_type is FileType.sparse_sdf:
-            mapping[Metric.chamfer] = ChamferDistance.from_sparse_sdf_path(
-                file_path, num_samples
-            )
-
-    if Metric.iou in metric and file_type is FileType.sdf:
-        mapping[Metric.iou] = Iou(file_path)
-
-    if Metric.ff in metric and file_type is FileType.sdf:
-        mapping[Metric.ff] = FourierFrequency(file_path)
-
+        mapping[Metric.chamfer] = ChamferDistance.from_pointcloud_path(
+            file_path, num_samples
+        )
     if Metric.normals in metric:
-        if file_type is FileType.pc:
-            mapping[Metric.normals] = NormalCosineSimilarity.from_pointcloud_path(
-                file_path, num_samples
-            )
-        elif file_type is FileType.sdf:
-            mapping[Metric.normals] = NormalCosineSimilarity.from_sdf_path(
-                file_path, num_samples
-            )
-        elif file_type is FileType.sparse_sdf:
-            mapping[Metric.normals] = NormalCosineSimilarity.from_sparse_sdf_path(
-                file_path, num_samples
-            )
+        mapping[Metric.normals] = NormalCosineSimilarity.from_pointcloud_path(
+            file_path, num_samples
+        )
+    if Metric.ff in metric:
+        mapping[Metric.ff] = FourierFrequency()
 
+    if Metric.combined in metric:
+        mapping[Metric.combined] = CombinedPointcloudMetric.from_pointcloud_path(
+            file_path, num_samples
+        )
     return mapping
 
 
@@ -87,9 +50,9 @@ class Evaluator:
         self,
         file_path: Path,
         metric: list[Metric],
-        num_samples: int = 10_000_000,
+        num_samples: int = 5_000_000,
     ) -> None:
-        self.file_type = _resolve_file_type(file_path)
+        self.gt_data = load_pointcloud(file_path)
         self.metrics = _resolve_metrics(file_path, metric, num_samples)
         self.num_samples = num_samples
 
@@ -161,15 +124,9 @@ class Evaluator:
             decoder.save(output_mesh_path)
 
         # Run once for Chamfer and Normal distances.
-        if Metric.chamfer in self.metrics or Metric.normals in self.metrics:
-            if self.file_type is FileType.pc:
-                pred_verts, pred_normals = mesh_to_pointcloud(
-                    decoder.vertices, decoder.faces, self.num_samples
-                )
-            elif self.file_type in {FileType.sdf, FileType.sparse_sdf}:
-                pred_verts, pred_normals = sdf_to_pointcloud(
-                    decoder.sdf, self.num_samples
-                )
+        pred_verts, pred_normals = mesh_to_pointcloud(
+            decoder.vertices, decoder.faces, self.num_samples
+        )
 
         results = {}
         if self.metrics is None:
@@ -190,13 +147,13 @@ class Evaluator:
                 )
             )
 
-        if Metric.iou in self.metrics:
-            logging.info(f"Computing IoU.")
-            results.update(self.metrics[Metric.iou](decoder.sdf))
-
         if Metric.ff in self.metrics:
             logging.info(f"Computing Fourier frequency.")
             results.update(self.metrics[Metric.ff](decoder.sdf))
+
+        if Metric.combined in self.metrics:
+            logging.info(f"Computing combined metric.")
+            results.update(self.metrics[Metric.combined](pred_verts, pred_normals))
 
         model.train(is_training)
         return results

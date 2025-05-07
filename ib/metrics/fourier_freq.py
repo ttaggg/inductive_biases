@@ -40,14 +40,9 @@ class FourierFrequency:
     C_fourier(f) = (sum_{k != 0} |F(k)| * |k|) / (sum_{k != 0} |F(k)|)
     """
 
-    def __init__(self, sdf_path: Path) -> None:
-        self.gt_sdf = np.load(sdf_path)
-
     def __call__(self, predicted_sdf: np.ndarray) -> dict[str, float]:
-        gt_metric = _calculate_fourier_frequency(self.gt_sdf)
         predicted_metric = _calculate_fourier_frequency(predicted_sdf)
 
         return {
-            "metrics/gt_fourier": gt_metric,
             "metrics/predicted_fourier": predicted_metric,
         }

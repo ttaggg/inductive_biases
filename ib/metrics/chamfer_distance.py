@@ -1,6 +1,7 @@
 """Chamfer Distance metric."""
 
 from pathlib import Path
+from typing_extensions import deprecated
 
 import numpy as np
 from scipy.spatial import KDTree
@@ -35,12 +36,14 @@ class ChamferDistance:
         )
         return cls(vertices, num_points, labels)
 
+    @deprecated("No longer used.")
     @classmethod
     def from_sdf_path(cls, sdf_path: Path, num_points: int):
         sdf = np.load(sdf_path)
         vertices, _ = sdf_to_pointcloud(sdf, num_points)
         return cls(vertices, num_points)
 
+    @deprecated("No longer used.")
     @classmethod
     def from_sparse_sdf_path(cls, sparse_sdf_path: Path, num_points: int):
         sparse_data = np.load(sparse_sdf_path)

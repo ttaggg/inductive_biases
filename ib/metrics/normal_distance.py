@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from typing import Optional
+from typing_extensions import deprecated
 
 import numpy as np
 from scipy.spatial import KDTree
@@ -38,12 +39,14 @@ class NormalCosineSimilarity:
         )
         return cls(vertices, normals, num_points, labels)
 
+    @deprecated("No longer used.")
     @classmethod
     def from_sdf_path(cls, sdf_path: Path, num_points: int):
         sdf = np.load(sdf_path)
         vertices, normals = sdf_to_pointcloud(sdf, num_points)
         return cls(vertices, normals, num_points)
 
+    @deprecated("No longer used.")
     @classmethod
     def from_sparse_sdf_path(cls, sparse_sdf_path: Path, num_points: int):
         sparse_data = np.load(sparse_sdf_path)
