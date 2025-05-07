@@ -1,5 +1,7 @@
 """Utils to convert betweeen data types."""
 
+from typing_extensions import deprecated
+
 import numpy as np
 import open3d as o3d
 from skimage import measure
@@ -25,6 +27,7 @@ def mesh_to_pointcloud(
     return resampler.sampled_vertices, resampler.sampled_normals
 
 
+@deprecated("No longer used.")
 def sdf_to_pointcloud(
     sdf: np.ndarray,
     num_points: int,
@@ -34,6 +37,7 @@ def sdf_to_pointcloud(
     return vertices, normals
 
 
+@deprecated("No longer used.")
 def sparse_sdf_to_sdf_volume(
     surface_coords: np.ndarray,
     surface_sdf: np.ndarray,
