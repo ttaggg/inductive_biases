@@ -114,6 +114,7 @@ class Evaluator:
         try:
             decoder = SdfDecoder(model)
             decoder.run(resolution, batch_size)
+            decoder.trim_mesh(self.gt_data["points"])
         except Exception as e:
             logging.info(f"An error occurred: {e}.")
             logging.info("Cannot decode, returning empty metrics.")

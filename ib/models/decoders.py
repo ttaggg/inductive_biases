@@ -48,6 +48,12 @@ class SdfDecoder:
 
         logging.info(f"Mesh contains {len(verts)} vertices and {len(faces)} faces.")
 
+    def trim_mesh(self, vertices: np.ndarray) -> None:
+        min_bound = vertices.min(axis=0)
+        max_bound = vertices.max(axis=0)
+        bbox = o3d.geometry.AxisAlignedBoundingBox(min_bound, max_bound)
+        self.mesh = self.mesh.crop(bbox)
+
     def save(self, file_path: Path) -> None:
         o3d.io.write_triangle_mesh(file_path, self.mesh)
         logging.info(f"Mesh was written to {file_path}")
