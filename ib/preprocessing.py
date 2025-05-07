@@ -16,8 +16,9 @@ from ib.utils.pointcloud import (
 app = typer.Typer(add_completion=False)
 
 
-def generate_output_path(file_path: Path) -> Path:
-    return file_path.with_name(f"{file_path.stem}_filtered{file_path.suffix}")
+def generate_output_path(file_path: Path, margin: float) -> Path:
+    margin = str(margin).replace(".", "")
+    return file_path.with_name(f"{file_path.stem}_filtered_{margin}{file_path.suffix}")
 
 
 @app.command(no_args_is_help=True)
@@ -71,7 +72,7 @@ def evaluation(
     points_final = normalize_pointcloud_with_margin(points_filtered, margin=margin)
 
     # Save the pointcloud.
-    output_path = generate_output_path(input_path)
+    output_path = generate_output_path(input_path, margin)
     write_ply(output_path, points_final, normals_final, colors_final, labels_final)
 
     logging.info(f"Pointcloud was saved to {output_path}")
