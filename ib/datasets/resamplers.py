@@ -123,7 +123,7 @@ class Resampler:
             (per_face_normals, per_face_normals2, additional_normals)
         )
 
-        self.sampled_vertices, self.sampled_normals = filter_incorrect_normals(
+        self.sampled_vertices, self.sampled_normals, _ = filter_incorrect_normals(
             self.sampled_vertices,
             self.sampled_normals,
         )
@@ -186,7 +186,7 @@ class SimpleResampler(Resampler):
                 face_probs=face_probs,
             )
         )
-        self.sampled_vertices, self.sampled_normals = filter_incorrect_normals(
+        self.sampled_vertices, self.sampled_normals, _ = filter_incorrect_normals(
             self.sampled_vertices,
             self.sampled_normals,
         )

@@ -33,8 +33,9 @@ class NormalCosineSimilarity:
     @classmethod
     def from_pointcloud_path(cls, pointcloud_path: Path, num_points: int):
         data = load_pointcloud(pointcloud_path)
-        vertices, normals = filter_incorrect_normals(data["points"], data["normals"])
-        labels = data["labels"]
+        vertices, normals, labels = filter_incorrect_normals(
+            data["points"], data["normals"], data["labels"]
+        )
         return cls(vertices, normals, num_points, labels)
 
     @classmethod

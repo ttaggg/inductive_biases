@@ -30,8 +30,9 @@ class ChamferDistance:
     @classmethod
     def from_pointcloud_path(cls, pointcloud_path: Path, num_points: int):
         data = load_pointcloud(pointcloud_path)
-        vertices, _ = filter_incorrect_normals(data["points"], data["normals"])
-        labels = data.get("labels", None)
+        vertices, _, labels = filter_incorrect_normals(
+            data["points"], data["normals"], data["labels"]
+        )
         return cls(vertices, num_points, labels)
 
     @classmethod

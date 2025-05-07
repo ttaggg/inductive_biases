@@ -20,7 +20,7 @@ class PointCloudDataset(Dataset):
         off_surface_ratio: float,
     ) -> None:
         data = self.load(file_path)
-        self.points, self.normals = filter_incorrect_normals(
+        self.points, self.normals, _ = filter_incorrect_normals(
             data["points"], data["normals"]
         )
         self.batch_size = batch_size

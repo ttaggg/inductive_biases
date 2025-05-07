@@ -1,7 +1,6 @@
 """Utils for pointclouds."""
 
 from typing import Optional
-from typing_extensions import deprecated
 
 import numpy as np
 
@@ -78,10 +77,14 @@ def filter_pointcloud(
 def filter_incorrect_normals(
     points: np.ndarray,
     normals: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
+    labels: Optional[np.ndarray] = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Filter out invalid normals and points with zero normals.
     correct_normals = np.logical_and(
         np.linalg.norm(normals, axis=-1) != 0.0,
         np.all(np.isfinite(normals), axis=-1),
     )
-    return points[correct_normals], normals[correct_normals]
+    points = points[correct_normals]
+    normals = normals[correct_normals]
+    labels = labels[correct_normals] if labels is not None else None
+    return points, normals, labels
