@@ -7,6 +7,8 @@ from typing_extensions import deprecated
 import numpy as np
 from plyfile import PlyData, PlyElement
 
+from ib.utils.logging_module import logging
+
 
 @deprecated("Do not use obj files")
 def load_obj(
@@ -157,3 +159,4 @@ def write_ply(
 
     ply_el = PlyElement.describe(vertex_array, "vertex")
     PlyData([ply_el]).write(str(file_path))
+    logging.info(f"Saved pointcloud PLY to {file_path}")

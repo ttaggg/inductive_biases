@@ -2,13 +2,12 @@
 
 from pathlib import Path
 from typing import Optional
-from typing_extensions import deprecated
 
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.spatial import KDTree
 
 from ib.utils.data import load_pointcloud, write_ply
-from ib.utils.logging_module import logging
 from ib.utils.pointcloud import filter_incorrect_normals
 
 
@@ -20,23 +19,31 @@ class NormalCosineSimilarity:
         vertices: np.ndarray,
         normals: np.ndarray,
         labels: np.ndarray | None,
-        num_points: int,
     ):
-        # Sample uniformly.
-        num_points = min(num_points, len(vertices))
-        indices = np.random.choice(len(vertices), num_points, replace=False)
-        self.vertices = vertices[indices]
-        self.normals = normals[indices]
-        self.labels = labels[indices] if labels is not None else None
-        self.tree = KDTree(self.vertices)
+        self.vertices = vertices
+        self.normals = normals
+        self.labels = labels
+        self.tree = KDTree(vertices)
 
     @classmethod
-    def from_pointcloud_path(cls, pointcloud_path: Path, num_points: int):
+    def from_pointcloud(
+        cls,
+        target_vertices: np.ndarray,
+        target_normals: np.ndarray,
+        target_labels: np.ndarray | None,
+    ):
+        vertices, normals, labels = filter_incorrect_normals(
+            target_vertices, target_normals, target_labels
+        )
+        return cls(vertices, normals, labels)
+
+    @classmethod
+    def from_pointcloud_path(cls, pointcloud_path: Path):
         data = load_pointcloud(pointcloud_path)
         vertices, normals, labels = filter_incorrect_normals(
             data["points"], data["normals"], data["labels"]
         )
-        return cls(vertices, normals, labels, num_points)
+        return cls(vertices, normals, labels)
 
     def _compute_directional_similarity_radius(
         self,
@@ -52,7 +59,7 @@ class NormalCosineSimilarity:
         neighbor_indices: list[list] = source_tree.query_ball_tree(
             target_tree, r=radius
         )
-        sims = -1 * np.ones(len(source_normals))
+        sims = np.nan * np.ones(len(source_normals))
         for i, indices in enumerate(neighbor_indices):
             if len(indices) != 0:
                 similarities = np.dot(target_normals[indices], source_normals[i])
@@ -70,31 +77,29 @@ class NormalCosineSimilarity:
         sims = np.sum(target_normals[indices] * source_normals, axis=1)
         return sims
 
-    def visualize_and_save(
+    def visualize_and_save_colormaps(
         self,
-        pred_vertices: np.ndarray,
-        pred_normals: np.ndarray,
+        vertices: np.ndarray,
+        normals: np.ndarray,
         sims: np.ndarray,
         save_path: Path,
     ) -> None:
-        # Get the error in [0, 1] range.
-        norm_sims = (np.clip(sims, -1, 1) + 1.0) / 2.0
-        # Only visualize points with low similarity.
-        mask = norm_sims < 0.5
-        norm_sims = norm_sims[mask]
-        pred_vertices = pred_vertices[mask]
-        pred_normals = pred_normals[mask]
-        norm_error = 1 - norm_sims
-        colors = (norm_error.reshape(-1, 1) * [255, 0, 0]).astype(np.uint8)
-        # Write the PLY file.
-        write_ply(save_path, pred_vertices, pred_normals, colors)
-        logging.info(f"Saved pointcloud PLY to {save_path}")
+        t = (sims + 1.0) / 2.0
+        rgba = plt.cm.jet_r(t)
+        colors = (rgba[:, :3] * 255).astype(np.uint8)
+        write_ply(save_path, vertices, normals, colors)
+
+    def visualize_and_save_nanmaps(
+        self, vertices: np.ndarray, sims: np.ndarray, save_path: Path
+    ) -> None:
+        vertices = vertices[np.isnan(sims)]
+        write_ply(save_path, vertices)
 
     def __call__(
         self,
         pred_vertices: np.ndarray,
         pred_normals: np.ndarray,
-        radius: float = 0.0025,
+        radius: float = 0.005,
         save_path: Optional[Path] = None,
     ) -> dict[str, float]:
         pred_tree = KDTree(pred_vertices)
@@ -113,22 +118,49 @@ class NormalCosineSimilarity:
         closest_sims_p2t = self._compute_directional_similarity_closest(
             pred_vertices, pred_normals, self.tree, self.normals
         )
-
-        # Take mean of both directions.
-        radius_sims = (radius_sims_p2t.mean() + radius_sims_t2p.mean()) / 2.0
-        closest_sims = (closest_sims_p2t.mean() + closest_sims_t2p.mean()) / 2.0
+        # Use closest if radius similarity is nan.
+        combined_sims_t2p = np.where(
+            np.isnan(radius_sims_t2p), closest_sims_t2p, radius_sims_t2p
+        )
+        combined_sims_p2t = np.where(
+            np.isnan(radius_sims_p2t), closest_sims_p2t, radius_sims_p2t
+        )
+        normal_similarity = (combined_sims_p2t.mean() + combined_sims_t2p.mean()) / 2.0
 
         if save_path is not None:
-            self.visualize_and_save(
+            self.visualize_and_save_colormaps(
                 pred_vertices,
                 pred_normals,
-                closest_sims_p2t,
-                save_path,
+                combined_sims_p2t,
+                save_path.with_name(f"{save_path.stem}_p2t.ply"),
+            )
+            self.visualize_and_save_colormaps(
+                self.vertices,
+                self.normals,
+                combined_sims_t2p,
+                save_path.with_name(f"{save_path.stem}_t2p.ply"),
+            )
+            self.visualize_and_save_nanmaps(
+                pred_vertices,
+                radius_sims_p2t,
+                save_path.with_name(f"{save_path.stem}_nans_p2t.ply"),
+            )
+            self.visualize_and_save_nanmaps(
+                self.vertices,
+                radius_sims_t2p,
+                save_path.with_name(f"{save_path.stem}_nans_t2p.ply"),
             )
 
         results = {
-            "metrics/normal_similarity_radius": float(radius_sims),
-            "metrics/normal_similarity_closest": float(closest_sims),
+            "metrics/normal_similarity": float(normal_similarity),
+            "metrics/normal_similarity_t2p": float(combined_sims_t2p.mean()),
+            "metrics/normal_similarity_p2t": float(combined_sims_p2t.mean()),
+            "metrics/ratio_nan_t2p": float(
+                np.isnan(radius_sims_t2p).sum() / len(radius_sims_t2p)
+            ),
+            "metrics/ratio_nan_p2t": float(
+                np.isnan(radius_sims_p2t).sum() / len(radius_sims_p2t)
+            ),
         }
 
         if self.labels is not None:
@@ -137,26 +169,22 @@ class NormalCosineSimilarity:
             mask_pred = self.labels[idx_pred] > 0
 
             # Low-resolution regions.
-            low_res_t2p = closest_sims_t2p[mask_self].mean()
-            low_res_p2t = closest_sims_p2t[mask_pred].mean()
-            results["metrics/normal_similarity_closest_low_res_t2p"] = float(
-                low_res_t2p
-            )
-            results["metrics/normal_similarity_closest_low_res_p2t"] = float(
-                low_res_p2t
-            )
-            results["metrics/normal_similarity_closest_low_res"] = float(
+            low_res_t2p = combined_sims_t2p[mask_self].mean()
+            low_res_p2t = combined_sims_p2t[mask_pred].mean()
+            results["metrics/normal_similarity_low_res_t2p"] = float(low_res_t2p)
+            results["metrics/normal_similarity_low_res_p2t"] = float(low_res_p2t)
+            results["metrics/normal_similarity_low_res"] = float(
                 (low_res_t2p + low_res_p2t) / 2.0
             )
 
             # Other regions.
             mask_self_others = ~mask_self
             mask_pred_others = ~mask_pred
-            others_t2p = closest_sims_t2p[mask_self_others].mean()
-            others_p2t = closest_sims_p2t[mask_pred_others].mean()
-            results["metrics/normal_similarity_closest_others_t2p"] = float(others_t2p)
-            results["metrics/normal_similarity_closest_others_p2t"] = float(others_p2t)
-            results["metrics/normal_similarity_closest_others"] = float(
+            others_t2p = combined_sims_t2p[mask_self_others].mean()
+            others_p2t = combined_sims_p2t[mask_pred_others].mean()
+            results["metrics/normal_similarity_others_t2p"] = float(others_t2p)
+            results["metrics/normal_similarity_others_p2t"] = float(others_p2t)
+            results["metrics/normal_similarity_others"] = float(
                 (others_t2p + others_p2t) / 2.0
             )
 

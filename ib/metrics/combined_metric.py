@@ -45,22 +45,31 @@ class CombinedPointcloudMetric:
         vertices: np.ndarray,
         normals: np.ndarray,
         labels: np.ndarray | None,
-        num_points: int,
     ):
-        # Sample uniformly.
-        num_points = min(num_points, len(vertices))
-        indices = np.random.choice(len(vertices), num_points, replace=True)
-        self.vertices = vertices[indices]
-        self.normals = normals[indices]
-        self.labels = labels[indices] if labels is not None else None
+        self.vertices = vertices
+        self.normals = normals
+        self.labels = labels
+        self.tree = KDTree(vertices)
 
     @classmethod
-    def from_pointcloud_path(cls, pointcloud_path: Path, num_points: int):
+    def from_pointcloud(
+        cls,
+        target_vertices: np.ndarray,
+        target_normals: np.ndarray,
+        target_labels: np.ndarray | None,
+    ):
+        vertices, normals, labels = filter_incorrect_normals(
+            target_vertices, target_normals, target_labels
+        )
+        return cls(vertices, normals, labels)
+
+    @classmethod
+    def from_pointcloud_path(cls, pointcloud_path: Path):
         data = load_pointcloud(pointcloud_path)
         vertices, normals, labels = filter_incorrect_normals(
             data["points"], data["normals"], data["labels"]
         )
-        return cls(vertices, normals, labels, num_points)
+        return cls(vertices, normals, labels)
 
     def _compute_directional_similarity_radius(
         self,

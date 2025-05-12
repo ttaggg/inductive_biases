@@ -12,31 +12,34 @@ from ib.utils.pointcloud import filter_incorrect_normals
 class ChamferDistance:
     """Bidirectional Chamfer Distance metric."""
 
-    def __init__(
-        self,
-        vertices: np.ndarray,
-        labels: np.ndarray | None,
-        num_points: int,
-    ) -> None:
-        # Sample uniformly.
-        num_points = min(num_points, len(vertices))
-        indices = np.random.choice(len(vertices), num_points, replace=False)
-        self.vertices = vertices[indices]
-        self.labels = labels[indices] if labels is not None else None
-        # Create a KDTree.
-        self.tree = KDTree(self.vertices)
+    def __init__(self, vertices: np.ndarray, labels: np.ndarray | None) -> None:
+        self.vertices = vertices
+        self.labels = labels
+        self.target_tree = KDTree(self.vertices)
 
     @classmethod
-    def from_pointcloud_path(cls, pointcloud_path: Path, num_points: int):
+    def from_pointcloud(
+        cls,
+        target_vertices: np.ndarray,
+        target_normals: np.ndarray,
+        target_labels: np.ndarray | None,
+    ):
+        vertices, _, labels = filter_incorrect_normals(
+            target_vertices, target_normals, target_labels
+        )
+        return cls(vertices, labels)
+
+    @classmethod
+    def from_pointcloud_path(cls, pointcloud_path: Path):
         data = load_pointcloud(pointcloud_path)
         vertices, _, labels = filter_incorrect_normals(
             data["points"], data["normals"], data["labels"]
         )
-        return cls(vertices, labels, num_points)
+        return cls(vertices, labels)
 
     def __call__(self, pred_vertices: np.ndarray) -> dict[str, float]:
-        dist_p2t, idx_p2t = self.tree.query(pred_vertices, workers=-1)
 
+        dist_p2t, idx_p2t = self.target_tree.query(pred_vertices, workers=-1)
         pred_tree = KDTree(pred_vertices)
         dist_t2p, _ = pred_tree.query(self.vertices, workers=-1)
 

@@ -3,6 +3,7 @@
 from enum import Enum
 from pathlib import Path
 
+import numpy as np
 import torch
 from torch import nn
 
@@ -14,6 +15,7 @@ from ib.models.decoders import SdfDecoder
 from ib.utils.data import load_pointcloud
 from ib.utils.geometry import mesh_to_pointcloud
 from ib.utils.pipeline import generate_output_mesh_path
+from ib.utils.pointcloud import filter_incorrect_normals
 from ib.utils.logging_module import logging
 
 
@@ -24,37 +26,40 @@ class Metric(str, Enum):
     combined = "combined"
 
 
-def _resolve_metrics(file_path: Path, metric: list[Metric], num_samples: int) -> dict:
+def _resolve_metrics(metric: list[Metric], gt_data: dict[str, np.ndarray]) -> dict:
+
     mapping = {}
     if Metric.chamfer in metric:
-        mapping[Metric.chamfer] = ChamferDistance.from_pointcloud_path(
-            file_path, num_samples
+        mapping[Metric.chamfer] = ChamferDistance.from_pointcloud(
+            gt_data["points"], gt_data["normals"], gt_data["labels"]
         )
     if Metric.normals in metric:
-        mapping[Metric.normals] = NormalCosineSimilarity.from_pointcloud_path(
-            file_path, num_samples
+        mapping[Metric.normals] = NormalCosineSimilarity.from_pointcloud(
+            gt_data["points"], gt_data["normals"], gt_data["labels"]
         )
     if Metric.ff in metric:
         mapping[Metric.ff] = FourierFrequency()
 
     if Metric.combined in metric:
-        mapping[Metric.combined] = CombinedPointcloudMetric.from_pointcloud_path(
-            file_path, num_samples
+        mapping[Metric.combined] = CombinedPointcloudMetric.from_pointcloud(
+            gt_data["points"], gt_data["normals"], gt_data["labels"]
         )
     return mapping
 
 
 class Evaluator:
 
-    def __init__(
-        self,
-        file_path: Path,
-        metric: list[Metric],
-        num_samples: int = 5_000_000,
-    ) -> None:
+    def __init__(self, file_path: Path, metric: list[Metric]) -> None:
         self.gt_data = load_pointcloud(file_path)
-        self.metrics = _resolve_metrics(file_path, metric, num_samples)
-        self.num_samples = num_samples
+        self.gt_data["points"], self.gt_data["normals"], self.gt_data["labels"] = (
+            filter_incorrect_normals(
+                self.gt_data["points"],
+                self.gt_data["normals"],
+                self.gt_data["labels"],
+            )
+        )
+        self.metrics = _resolve_metrics(metric, self.gt_data)
+        self.num_samples = len(self.gt_data["points"])
 
     def run(
         self,
@@ -143,8 +148,8 @@ class Evaluator:
                 self.metrics[Metric.normals](
                     pred_verts,
                     pred_normals,
-                    # save_path=Path(output_mesh_path).parent
-                    # / f"normals_closest_{current_epoch}.ply",
+                    save_path=Path(output_mesh_path).parent
+                    / f"normals_similarity_epoch_{current_epoch}",
                 )
             )
 

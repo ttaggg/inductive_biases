@@ -9,7 +9,6 @@ def normalize_pointcloud(
     points: np.ndarray,
     bounds_min: np.ndarray = np.array([-1.0, -1.0, -1.0]),
     bounds_max: np.ndarray = np.array([1.0, 1.0, 1.0]),
-    return_meta: bool = False,
 ) -> tuple[np.ndarray, dict]:
     """Linearly maps points to lie within [bounds_min, bounds_max]."""
     points_min = points.min(axis=0)
@@ -20,12 +19,6 @@ def normalize_pointcloud(
     # Center points around origin of target box
     points_centered = points - (points_min + points_max) / 2.0
     target_center = (bounds_min + bounds_max) / 2.0
-
-    if return_meta:
-        return (
-            points_centered * s + target_center,
-            {"scale": s, "target_center": target_center},
-        )
     return points_centered * s + target_center
 
 
