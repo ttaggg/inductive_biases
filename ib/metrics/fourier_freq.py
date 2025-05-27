@@ -1,8 +1,8 @@
 """Fourier Frequency metric."""
 
-from pathlib import Path
-
 import numpy as np
+
+from ib.utils.logging_module import logging
 
 
 def _calculate_fourier_frequency(sdf_volume: np.ndarray) -> float:
@@ -23,15 +23,14 @@ def _calculate_fourier_frequency(sdf_volume: np.ndarray) -> float:
     # Compute the Euclidean magnitude of the frequency vector at each grid point.
     k_magnitude = np.sqrt(kx**2 + ky**2 + kz**2)
 
-    # Exclude the zero frequency (DC) component.
-    nonzero_mask = k_magnitude > 0
+    total_amp = fft_amplitude.sum()
+    if total_amp == 0:
+        logging.info("Constant function, returning 0.0")
+        return 0.0
 
-    # Compute the numerator and denominator of the metric.
-    numerator = np.sum(fft_amplitude[nonzero_mask] * k_magnitude[nonzero_mask])
-    denominator = np.sum(fft_amplitude[nonzero_mask]) + 1e-8  # Avoid division by zero.
-
-    # The final metric is the weighted average frequency.
-    return float(numerator / denominator)
+    p = fft_amplitude / total_amp  # p_k = |F_k| / Σ_q|F_q|
+    complexity = np.sum(p * k_magnitude)  # Σ_k ‖k‖₂ · p_k
+    return float(complexity)
 
 
 class FourierFrequency:
@@ -42,7 +41,4 @@ class FourierFrequency:
 
     def __call__(self, predicted_sdf: np.ndarray) -> dict[str, float]:
         predicted_metric = _calculate_fourier_frequency(predicted_sdf)
-
-        return {
-            "metrics/predicted_fourier": predicted_metric,
-        }
+        return {"metrics/predicted_fourier": predicted_metric}

@@ -83,23 +83,35 @@ class NormalCosineSimilarity:
         normals: np.ndarray,
         sims: np.ndarray,
         save_path: Path,
+        mask: np.ndarray | None = None,
     ) -> None:
         t = (sims + 1.0) / 2.0
         rgba = plt.cm.jet_r(t)
         colors = (rgba[:, :3] * 255).astype(np.uint8)
+        if mask is not None:
+            vertices = vertices[mask]
+            normals = normals[mask]
+            colors = colors[mask]
         write_ply(save_path, vertices, normals, colors)
 
     def visualize_and_save_nanmaps(
-        self, vertices: np.ndarray, sims: np.ndarray, save_path: Path
+        self,
+        vertices: np.ndarray,
+        sims: np.ndarray,
+        save_path: Path,
+        mask: np.ndarray | None = None,
     ) -> None:
-        vertices = vertices[np.isnan(sims)]
+        overall_mask = np.isnan(sims)
+        if mask is not None:
+            overall_mask = np.logical_and(overall_mask, mask)
+        vertices = vertices[overall_mask]
         write_ply(save_path, vertices)
 
     def __call__(
         self,
         pred_vertices: np.ndarray,
         pred_normals: np.ndarray,
-        radius: float = 0.005,
+        radius: float = 0.0075,
         save_path: Optional[Path] = None,
     ) -> dict[str, float]:
         pred_tree = KDTree(pred_vertices)
@@ -169,23 +181,78 @@ class NormalCosineSimilarity:
             mask_pred = self.labels[idx_pred] > 0
 
             # Low-resolution regions.
-            low_res_t2p = combined_sims_t2p[mask_self].mean()
-            low_res_p2t = combined_sims_p2t[mask_pred].mean()
-            results["metrics/normal_similarity_low_res_t2p"] = float(low_res_t2p)
-            results["metrics/normal_similarity_low_res_p2t"] = float(low_res_p2t)
-            results["metrics/normal_similarity_low_res"] = float(
-                (low_res_t2p + low_res_p2t) / 2.0
+            low_freq_t2p = combined_sims_t2p[mask_self].mean()
+            low_freq_p2t = combined_sims_p2t[mask_pred].mean()
+            results["metrics/normal_similarity_low_freq_t2p"] = float(low_freq_t2p)
+            results["metrics/normal_similarity_low_freq_p2t"] = float(low_freq_p2t)
+            results["metrics/normal_similarity_low_freq"] = float(
+                (low_freq_t2p + low_freq_p2t) / 2.0
             )
 
             # Other regions.
-            mask_self_others = ~mask_self
-            mask_pred_others = ~mask_pred
-            others_t2p = combined_sims_t2p[mask_self_others].mean()
-            others_p2t = combined_sims_p2t[mask_pred_others].mean()
-            results["metrics/normal_similarity_others_t2p"] = float(others_t2p)
-            results["metrics/normal_similarity_others_p2t"] = float(others_p2t)
-            results["metrics/normal_similarity_others"] = float(
-                (others_t2p + others_p2t) / 2.0
+            mask_self_hf = self.labels < 0
+            mask_pred_hf = self.labels[idx_pred] < 0
+            high_freq_t2p = combined_sims_t2p[mask_self_hf].mean()
+            high_freq_p2t = combined_sims_p2t[mask_pred_hf].mean()
+            results["metrics/normal_similarity_high_freq_t2p"] = float(high_freq_t2p)
+            results["metrics/normal_similarity_high_freq_p2t"] = float(high_freq_p2t)
+            results["metrics/normal_similarity_high_freq"] = float(
+                (high_freq_t2p + high_freq_p2t) / 2.0
             )
+
+            # Label-dependent visualizations
+            if save_path is not None:
+                self.visualize_and_save_colormaps(
+                    pred_vertices,
+                    pred_normals,
+                    combined_sims_p2t,
+                    save_path.with_name(f"{save_path.stem}_pred_hf_p2t.ply"),
+                    mask_pred_hf,
+                )
+                self.visualize_and_save_colormaps(
+                    self.vertices,
+                    self.normals,
+                    combined_sims_t2p,
+                    save_path.with_name(f"{save_path.stem}_target_hf_t2p.ply"),
+                    mask_self_hf,
+                )
+                self.visualize_and_save_colormaps(
+                    pred_vertices,
+                    pred_normals,
+                    combined_sims_p2t,
+                    save_path.with_name(f"{save_path.stem}_pred_lf_p2t.ply"),
+                    mask_pred,
+                )
+                self.visualize_and_save_colormaps(
+                    self.vertices,
+                    self.normals,
+                    combined_sims_t2p,
+                    save_path.with_name(f"{save_path.stem}_target_lf_t2p.ply"),
+                    mask_self,
+                )
+                self.visualize_and_save_nanmaps(
+                    pred_vertices,
+                    radius_sims_p2t,
+                    save_path.with_name(f"{save_path.stem}_nans_pred_hf_p2t.ply"),
+                    mask_pred_hf,
+                )
+                self.visualize_and_save_nanmaps(
+                    self.vertices,
+                    radius_sims_t2p,
+                    save_path.with_name(f"{save_path.stem}_nans_target_hf_t2p.ply"),
+                    mask_self_hf,
+                )
+                self.visualize_and_save_nanmaps(
+                    pred_vertices,
+                    radius_sims_p2t,
+                    save_path.with_name(f"{save_path.stem}_nans_pred_lf_p2t.ply"),
+                    mask_pred,
+                )
+                self.visualize_and_save_nanmaps(
+                    self.vertices,
+                    radius_sims_t2p,
+                    save_path.with_name(f"{save_path.stem}_nans_target_lf_t2p.ply"),
+                    mask_self,
+                )
 
         return results
