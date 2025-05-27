@@ -94,6 +94,10 @@ class Siren(nn.Module):
 
         self.net = nn.Sequential(*layers)
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, inputs: torch.Tensor, return_meta: bool = False
+    ) -> torch.Tensor | tuple[torch.Tensor, dict]:
         outputs = self.net(inputs)
+        if return_meta:
+            return outputs, {}
         return outputs

@@ -26,8 +26,11 @@ class BaseModel(L.LightningModule):
         return outputs
 
     def training_step(self, model_inputs: dict[str, torch.Tensor], _) -> torch.Tensor:
-        losses = self.loss_fn(self.inr, model_inputs)
+        losses, metadata = self.loss_fn(self.inr, model_inputs)
         loss = torch.stack(list(losses.values())).mean()
+
+        for key, value in metadata.items():
+            self.log(key, value, on_step=False, on_epoch=True, prog_bar=True)
         self.log_weights()
         self.log_grads()
         self.log("losses/total", loss, on_step=False, on_epoch=True, prog_bar=True)

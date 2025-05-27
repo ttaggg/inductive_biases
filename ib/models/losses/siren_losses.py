@@ -45,7 +45,7 @@ class SirenSdfLoss(nn.Module):
         on_surface_mask = model_inputs["sdf"]
         gt_normals = model_inputs["normals"]
 
-        pred_sdf = model(coords)
+        pred_sdf, metadata = model(coords, return_meta=True)
 
         # Gradient constraint.
         gradient = compute_gradients(pred_sdf, coords)
@@ -80,4 +80,4 @@ class SirenSdfLoss(nn.Module):
             "losses/sdf": sdf_constraint * self.lambda_sdf,
             "losses/normal": normal_constraint * self.lambda_normal,
             "losses/inter": inter_constraint * self.lambda_inter,
-        }
+        }, metadata
