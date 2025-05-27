@@ -27,7 +27,7 @@ class PointCloudDataset(Dataset):
         self.off_surface_ratio = off_surface_ratio
 
         assert self.batch_size <= len(self.points)
-        logging.info(f"Dataset size: {len(self.points)}.")
+        logging.info(f"Dataset size: {len(self.points):_}.")
 
     def __getitem__(self, _: int) -> dict[str, np.ndarray]:
         """Retrieve the whole batch of data."""

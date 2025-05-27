@@ -18,7 +18,9 @@ app = typer.Typer(add_completion=False)
 
 def generate_output_path(file_path: Path, margin: float) -> Path:
     margin = str(margin).replace(".", "")
-    return file_path.with_name(f"{file_path.stem}_filtered_{margin}{file_path.suffix}")
+    return file_path.with_name(
+        f"{file_path.stem}_filtered_trimmed_both_{margin}{file_path.suffix}"
+    )
 
 
 @app.command(no_args_is_help=True)
@@ -74,8 +76,6 @@ def evaluation(
     # Save the pointcloud.
     output_path = generate_output_path(input_path, margin)
     write_ply(output_path, points_final, normals_final, colors_final, labels_final)
-
-    logging.info(f"Pointcloud was saved to {output_path}")
 
 
 if __name__ == "__main__":

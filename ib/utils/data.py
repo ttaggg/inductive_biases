@@ -136,7 +136,7 @@ def write_ply(
     if labels is not None:
         dtype.extend(
             [
-                ("label", "u1"),
+                ("label", "i4"),
             ]
         )
     ply_dtype = np.dtype(dtype)
