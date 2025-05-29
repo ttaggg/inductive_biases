@@ -23,6 +23,7 @@ def evaluation(
     batch_size: int = 256000,
     device: str = "cuda",
     save_mesh: bool = False,
+    float32_matmul_precision: str = "high",
 ) -> None:
     """Evaluate the model."""
 
@@ -35,6 +36,7 @@ def evaluation(
         resolution,
         batch_size,
         save_mesh,
+        float32_matmul_precision,
     )
 
     logging.panel("Results", yaml.dump(results))

@@ -83,8 +83,11 @@ class Evaluator:
         resolution: int,
         batch_size: int,
         save_mesh: bool,
+        float32_matmul_precision: str = "high",
     ) -> dict:
+        torch.set_float32_matmul_precision(float32_matmul_precision)
         model = torch.load(model_path, weights_only=False, map_location=device)
+        model = torch.compile(model)
         model.to(device)
         current_epoch = int(model_path.stem.split("_")[-1])
         return self._run(
