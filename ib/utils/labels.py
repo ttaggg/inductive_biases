@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 from scipy.spatial import KDTree
 
-from ib.utils.data import load_ply, write_ply
+from ib.utils.data import load_ply
 from ib.utils.logging_module import logging
 
 LABELS = {
