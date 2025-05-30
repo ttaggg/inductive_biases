@@ -8,7 +8,6 @@ import numpy as np
 import torch
 from torch import nn
 
-from ib.metrics.combined_metric import CombinedPointcloudMetric
 from ib.metrics.chamfer_distance import ChamferDistance
 from ib.metrics.fourier_freq import FourierFrequency
 from ib.metrics.normal_distance import NormalCosineSimilarity
@@ -24,7 +23,6 @@ class Metric(str, Enum):
     chamfer = "chamfer"
     ff = "fourier_freq"
     normals = "normals"
-    combined = "combined"
 
 
 def _resolve_metrics(metric: list[Metric], gt_data: dict[str, np.ndarray]) -> dict:
@@ -41,10 +39,6 @@ def _resolve_metrics(metric: list[Metric], gt_data: dict[str, np.ndarray]) -> di
     if Metric.ff in metric:
         mapping[Metric.ff] = FourierFrequency()
 
-    if Metric.combined in metric:
-        mapping[Metric.combined] = CombinedPointcloudMetric.from_pointcloud(
-            gt_data["points"], gt_data["normals"], gt_data["labels"]
-        )
     return mapping
 
 
@@ -186,9 +180,5 @@ class Evaluator:
         # if Metric.ff in self.metrics:
         #     logging.info(f"Computing Fourier frequency.")
         #     results.update(self.metrics[Metric.ff](decoder.sdf))
-
-        if Metric.combined in self.metrics:
-            logging.info(f"Computing combined metric.")
-            results.update(self.metrics[Metric.combined](pred_verts, pred_normals))
 
         return results
