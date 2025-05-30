@@ -98,7 +98,7 @@ class Evaluator:
             run_name = model.model_cfg.run_name.replace("/", "_")
         output_mesh_path = generate_output_mesh_path(
             model.model_cfg.paths.saved_models
-            / f"model_{run_name}_epoch_{model.current_epoch}.pt",
+            / f"model_{run_name}_epoch_{current_epoch}.pt",
             resolution,
         )
 
@@ -123,8 +123,8 @@ class Evaluator:
         results = self._run(
             pred_verts,
             pred_normals,
-            model.current_epoch,
             resolution,
+            current_epoch,
             output_mesh_path,
         )
         model.train(is_training)
@@ -145,8 +145,8 @@ class Evaluator:
         return self._run(
             pred_verts,
             pred_normals,
-            current_epoch,
             resolution,
+            current_epoch,
             mesh_path,
         )
 
@@ -154,8 +154,8 @@ class Evaluator:
         self,
         pred_verts: np.ndarray,
         pred_normals: np.ndarray,
-        current_epoch: int,
         resolution: int,
+        current_epoch: int,
         output_mesh_path: Path,
     ) -> dict:
         results = {}
