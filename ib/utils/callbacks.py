@@ -23,7 +23,7 @@ class EvaluatorCallback(L.Callback):
 
     def evaluate(self, pl_module: L.LightningModule) -> None:
         """Run the evaluator on the current model."""
-        results = self.evaluator.run(
+        results = self.evaluator.run_from_model(
             model=pl_module,
             resolution=self.eval_cfg.resolution,
             batch_size=self.eval_cfg.batch_size,

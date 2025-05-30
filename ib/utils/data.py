@@ -66,6 +66,20 @@ def load_ply(file_path: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         data["colors"] = np.vstack((ply["red"], ply["green"], ply["blue"])).T
     if "label" in ply:
         data["labels"] = ply["label"]
+
+    if "face" in ply_data:
+        face_data = ply_data["face"].data
+        prop_name = face_data.dtype.names[0]
+        face_indices = face_data[prop_name]
+        faces_list = []
+        for f in face_indices:
+            if len(f) == 3:
+                faces_list.append(tuple(f))
+            else:
+                for i in range(1, len(f) - 1):
+                    faces_list.append((f[0], f[i], f[i + 1]))
+        data["faces"] = np.array(faces_list, dtype=np.int64)
+
     return data
 
 

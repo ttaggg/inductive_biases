@@ -2,6 +2,7 @@
 
 from enum import Enum
 from pathlib import Path
+import re
 
 import numpy as np
 import torch
@@ -12,7 +13,7 @@ from ib.metrics.chamfer_distance import ChamferDistance
 from ib.metrics.fourier_freq import FourierFrequency
 from ib.metrics.normal_distance import NormalCosineSimilarity
 from ib.models.decoders import SdfDecoder
-from ib.utils.data import load_pointcloud
+from ib.utils.data import load_pointcloud, load_ply
 from ib.utils.geometry import mesh_to_pointcloud
 from ib.utils.pipeline import generate_output_mesh_path
 from ib.utils.pointcloud import filter_incorrect_normals
@@ -61,22 +62,7 @@ class Evaluator:
         self.metrics = _resolve_metrics(metric, self.gt_data)
         self.num_samples = len(self.gt_data["points"])
 
-    def run(
-        self,
-        model: nn.Module,
-        resolution: int,
-        batch_size: int,
-        save_mesh: bool,
-    ) -> dict:
-        return self._run(
-            model,
-            model.current_epoch,
-            resolution,
-            batch_size,
-            save_mesh,
-        )
-
-    def run_from_path(
+    def run_from_model_path(
         self,
         model_path: Path,
         device: str,
@@ -90,31 +76,35 @@ class Evaluator:
         model = torch.compile(model)
         model.to(device)
         current_epoch = int(model_path.stem.split("_")[-1])
-        return self._run(
+        return self.run_from_model(
             model,
-            current_epoch,
             resolution,
             batch_size,
             save_mesh,
+            current_epoch,
         )
 
-    def _run(
+    def run_from_model(
         self,
         model: nn.Module,
-        current_epoch: int,
         resolution: int,
         batch_size: int,
-        save_mesh: bool = True,
+        save_mesh: bool,
+        current_epoch: int | None = None,
     ) -> dict:
         is_training = model.training
         model.eval()
 
+        if current_epoch is None:
+            current_epoch = model.current_epoch
+
+        # Figure out the name.
         run_name = ""
         if hasattr(model.model_cfg, "run_name"):
             run_name = model.model_cfg.run_name.replace("/", "_")
         output_mesh_path = generate_output_mesh_path(
             model.model_cfg.paths.saved_models
-            / f"model_{run_name}_epoch_{current_epoch}.pt",
+            / f"model_{run_name}_epoch_{model.current_epoch}.pt",
             resolution,
         )
 
@@ -129,14 +119,51 @@ class Evaluator:
             model.train(is_training)
             return {}
 
-        if save_mesh:
-            decoder.save(output_mesh_path)
-
         # Run once for Chamfer and Normal distances.
         pred_verts, pred_normals = mesh_to_pointcloud(
             decoder.vertices, decoder.faces, self.num_samples
         )
+        if save_mesh:
+            decoder.save(output_mesh_path)
 
+        results = self._run(
+            pred_verts,
+            pred_normals,
+            model.current_epoch,
+            resolution,
+            output_mesh_path,
+        )
+        model.train(is_training)
+        return results
+
+    def run_from_mesh_path(self, mesh_path: Path) -> dict:
+        data = load_ply(mesh_path)
+        vertices, faces = data["points"], data["faces"]
+        pred_verts, pred_normals = mesh_to_pointcloud(vertices, faces, self.num_samples)
+
+        # Find out the epoch and resolution.
+        m = re.search(r"epoch_(\d+)_res_(\d+)", mesh_path.stem)
+        if not m:
+            logging.info(f"Could not parse epoch/res from {mesh_path.name!r}")
+            return {}
+        current_epoch, resolution = map(int, m.groups())
+
+        return self._run(
+            pred_verts,
+            pred_normals,
+            current_epoch,
+            resolution,
+            mesh_path,
+        )
+
+    def _run(
+        self,
+        pred_verts: np.ndarray,
+        pred_normals: np.ndarray,
+        current_epoch: int,
+        resolution: int,
+        output_mesh_path: Path,
+    ) -> dict:
         results = {}
         if self.metrics is None:
             return results
@@ -152,17 +179,16 @@ class Evaluator:
                     pred_verts,
                     pred_normals,
                     save_path=Path(output_mesh_path).parent
-                    / f"normals_similarity_epoch_{current_epoch}",
+                    / f"normals_similarity_epoch_{current_epoch}_res_{resolution}",
                 )
             )
 
-        if Metric.ff in self.metrics:
-            logging.info(f"Computing Fourier frequency.")
-            results.update(self.metrics[Metric.ff](decoder.sdf))
+        # if Metric.ff in self.metrics:
+        #     logging.info(f"Computing Fourier frequency.")
+        #     results.update(self.metrics[Metric.ff](decoder.sdf))
 
         if Metric.combined in self.metrics:
             logging.info(f"Computing combined metric.")
             results.update(self.metrics[Metric.combined](pred_verts, pred_normals))
 
-        model.train(is_training)
         return results

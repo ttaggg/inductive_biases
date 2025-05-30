@@ -15,8 +15,8 @@ app = typer.Typer(add_completion=False)
 
 @app.command(no_args_is_help=True)
 @measure_time
-def evaluation(
-    model_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
+def evaluate_model(
+    model_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)] = None,
     metric: list[Metric] = typer.Option(...),
     file_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)] = None,
     resolution: int = 512,
@@ -30,7 +30,7 @@ def evaluation(
     logging.stage("Running evaluation.")
 
     evaluator = Evaluator(file_path, metric)
-    results = evaluator.run_from_path(
+    results = evaluator.run_from_model_path(
         model_path,
         device,
         resolution,
