@@ -19,10 +19,10 @@ def evaluate_model(
     model_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)] = None,
     metric: list[Metric] = typer.Option(...),
     file_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)] = None,
-    resolution: int = 512,
-    batch_size: int = 256000,
+    resolution: int = 1024,
+    batch_size: int = 500000,
     device: str = "cuda",
-    save_mesh: bool = False,
+    save_mesh: bool = True,
     float32_matmul_precision: str = "high",
 ) -> None:
     """Evaluate the model."""
