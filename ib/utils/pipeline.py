@@ -2,6 +2,7 @@
 
 import os
 import random
+import re
 import time
 from datetime import date
 from functools import wraps
@@ -23,10 +24,53 @@ def resolve_and_expand_path(path: Path) -> Path:
     return path.expanduser().resolve()
 
 
-def generate_output_mesh_path(model_path: Path, resolution: int) -> str:
-    meshes_dir = model_path.parents[1] / "meshes"
+def generate_output_mesh_path(
+    base_dir: Path,
+    run_name: str,
+    current_epoch: int,
+    resolution: int,
+) -> Path:
+    meshes_dir = base_dir / "meshes"
     meshes_dir.mkdir(parents=True, exist_ok=True)
-    return str(meshes_dir / f"mesh_{model_path.stem}_res_{resolution}.ply")
+    return meshes_dir / f"mesh_{run_name}_epoch_{current_epoch}_res_{resolution}.ply"
+
+
+def generate_output_results_path(
+    base_dir: Path,
+    run_name: str,
+    current_epoch: int,
+    resolution: int,
+) -> Path:
+    results_dir = base_dir / "results"
+    results_dir.mkdir(parents=True, exist_ok=True)
+    return (
+        results_dir / f"results_{run_name}_epoch_{current_epoch}_res_{resolution}.json"
+    )
+
+
+def decode_path(mesh_path: Path) -> tuple[str, int, int]:
+    # Try first with resolution
+    m = re.search(
+        r"model_(?P<run_name>.+?)_epoch_(?P<epoch>\d+)_res_(?P<res>\d+)",
+        mesh_path.stem,
+    )
+    if m is not None:
+        run_name = m.group("run_name")
+        current_epoch = int(m.group("epoch"))
+        resolution = int(m.group("res"))
+        return run_name, current_epoch, resolution
+
+    # Try without resolution
+    m = re.search(
+        r"model_(?P<run_name>.+?)_epoch_(?P<epoch>\d+)",
+        mesh_path.stem,
+    )
+    if m is not None:
+        run_name = m.group("run_name")
+        current_epoch = int(m.group("epoch"))
+        return run_name, current_epoch, None
+
+    return None, None, None
 
 
 def measure_time(func):
@@ -80,11 +124,13 @@ def initialize_directories(output_dir_root: str, run_name: str) -> SimpleNamespa
             |   ├── config.yaml
             |   ├── log_file.txt
             |   ├── lightning_logs/
+            |   ├── results/
             |   └── saved_models/
             └── version_1/
                 ├── config.yaml
                 ├── log_file.txt
                 ├── lightning_logs/
+                ├── results/
                 └── saved_models/
     """
 
@@ -105,6 +151,7 @@ def initialize_directories(output_dir_root: str, run_name: str) -> SimpleNamespa
     version_dir = output_dir / next_version
     lightning_logs_dir = version_dir / "lightning_logs"
     saved_models_dir = version_dir / "saved_models"
+    results_dir = version_dir / "results"
 
     lightning_logs_dir.mkdir(parents=True, exist_ok=True)
     saved_models_dir.mkdir(parents=True, exist_ok=True)
@@ -119,6 +166,7 @@ def initialize_directories(output_dir_root: str, run_name: str) -> SimpleNamespa
         version=version_dir,
         lightning_logs=lightning_logs_dir,
         saved_models=saved_models_dir,
+        results=results_dir,
     )
 
 

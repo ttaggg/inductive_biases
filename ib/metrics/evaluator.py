@@ -1,8 +1,8 @@
 """Evaluator class."""
 
+import json
 from enum import Enum
 from pathlib import Path
-import re
 
 import numpy as np
 import torch
@@ -13,7 +13,11 @@ from ib.metrics.normal_distance import NormalCosineSimilarity
 from ib.models.decoders import SdfDecoder
 from ib.utils.data import load_pointcloud, load_ply
 from ib.utils.geometry import mesh_to_pointcloud
-from ib.utils.pipeline import generate_output_mesh_path
+from ib.utils.pipeline import (
+    decode_path,
+    generate_output_mesh_path,
+    generate_output_results_path,
+)
 from ib.utils.pointcloud import filter_incorrect_normals
 from ib.utils.logging_module import logging
 
@@ -89,10 +93,13 @@ class Evaluator:
         run_name = ""
         if hasattr(model.model_cfg, "run_name"):
             run_name = model.model_cfg.run_name.replace("/", "_")
+        model_path = model.model_cfg.paths.saved_models
+
         output_mesh_path = generate_output_mesh_path(
-            model.model_cfg.paths.saved_models
-            / f"model_{run_name}_epoch_{current_epoch}.pt",
-            resolution,
+            model_path.parent, run_name, current_epoch, resolution
+        )
+        output_results_path = generate_output_results_path(
+            model_path.parent, run_name, current_epoch, resolution
         )
 
         # Run once for all the metrics.
@@ -116,7 +123,8 @@ class Evaluator:
             pred_normals,
             resolution,
             current_epoch,
-            output_mesh_path,
+            save_mesh_dir=output_mesh_path.parent,
+            save_results_file=output_results_path,
         )
         model.train(is_training)
         return results
@@ -126,19 +134,18 @@ class Evaluator:
         vertices, faces = data["points"], data["faces"]
         pred_verts, pred_normals = mesh_to_pointcloud(vertices, faces, self.num_samples)
 
-        # Find out the epoch and resolution.
-        m = re.search(r"epoch_(\d+)_res_(\d+)", mesh_path.stem)
-        if not m:
-            logging.info(f"Could not parse epoch/res from {mesh_path.name!r}")
-            return {}
-        current_epoch, resolution = map(int, m.groups())
+        run_name, current_epoch, resolution = decode_path(mesh_path)
+        output_results_path = generate_output_results_path(
+            mesh_path.parent, run_name, current_epoch, resolution
+        )
 
         return self._run(
             pred_verts,
             pred_normals,
             resolution,
             current_epoch,
-            mesh_path,
+            save_mesh_dir=mesh_path.parent,
+            save_results_file=output_results_path,
         )
 
     def _run(
@@ -147,7 +154,8 @@ class Evaluator:
         pred_normals: np.ndarray,
         resolution: int,
         current_epoch: int,
-        output_mesh_path: Path,
+        save_mesh_dir: Path,
+        save_results_file: Path,
     ) -> dict:
         results = {}
         if self.metrics is None:
@@ -163,9 +171,13 @@ class Evaluator:
                 self.metrics[Metric.normals](
                     pred_verts,
                     pred_normals,
-                    save_path=Path(output_mesh_path).parent
+                    save_path=save_mesh_dir
                     / f"normals_similarity_epoch_{current_epoch}_res_{resolution}",
                 )
             )
+
+        with open(save_results_file, "w") as f:
+            json.dump(dict(sorted(results.items())), f, indent=4)
+            logging.info(f"Evaluation results are saved to {save_results_file}")
 
         return results

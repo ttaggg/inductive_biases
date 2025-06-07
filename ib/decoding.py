@@ -9,6 +9,7 @@ from ib.models.decoders import SdfDecoder
 from ib.utils.logging_module import logging
 from ib.utils.pipeline import (
     generate_output_mesh_path,
+    decode_path,
     measure_time,
     resolve_and_expand_path,
 )
@@ -32,7 +33,10 @@ def decoding(
     decoder = SdfDecoder.from_model_path(model_path, device)
     decoder.run(resolution, batch_size)
 
-    output_path = generate_output_mesh_path(model_path, resolution)
+    run_name, current_epoch, _ = decode_path(model_path)
+    output_path = generate_output_mesh_path(
+        model_path.parent, run_name, current_epoch, resolution
+    )
     decoder.save(output_path)
 
     if visualize:

@@ -55,7 +55,7 @@ class SdfDecoder:
         self.mesh = self.mesh.crop(bbox)
 
     def save(self, file_path: Path) -> None:
-        o3d.io.write_triangle_mesh(file_path, self.mesh)
+        o3d.io.write_triangle_mesh(str(file_path), self.mesh)
         logging.info(f"Mesh was written to {file_path}")
 
     def show(self) -> None:
