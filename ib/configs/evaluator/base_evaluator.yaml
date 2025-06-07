@@ -1,7 +1,6 @@
 file_path: ${scene.file_path}
 batch_size: ${trainer.batch_size}
 resolution: 1024
-save_mesh: true
 metric_names:
     - chamfer
     - normals

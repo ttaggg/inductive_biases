@@ -58,7 +58,6 @@ class Evaluator:
         device: str,
         resolution: int,
         batch_size: int,
-        save_mesh: bool,
         float32_matmul_precision: str = "high",
     ) -> dict:
         torch.set_float32_matmul_precision(float32_matmul_precision)
@@ -70,7 +69,6 @@ class Evaluator:
             model,
             resolution,
             batch_size,
-            save_mesh,
             current_epoch,
         )
 
@@ -79,7 +77,6 @@ class Evaluator:
         model: nn.Module,
         resolution: int,
         batch_size: int,
-        save_mesh: bool,
         current_epoch: int | None = None,
     ) -> dict:
         is_training = model.training
@@ -103,6 +100,7 @@ class Evaluator:
             decoder = SdfDecoder(model)
             decoder.run(resolution, batch_size)
             decoder.trim_mesh(self.gt_data["points"])
+            decoder.save(output_mesh_path)
         except Exception as e:
             logging.info(f"An error occurred: {e}.")
             logging.info("Cannot decode, returning empty metrics.")
@@ -113,9 +111,6 @@ class Evaluator:
         pred_verts, pred_normals = mesh_to_pointcloud(
             decoder.vertices, decoder.faces, self.num_samples
         )
-        if save_mesh:
-            decoder.save(output_mesh_path)
-
         results = self._run(
             pred_verts,
             pred_normals,

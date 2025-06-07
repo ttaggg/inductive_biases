@@ -22,7 +22,6 @@ def evaluate_model(
     resolution: int = 1024,
     batch_size: int = 500000,
     device: str = "cuda",
-    save_mesh: bool = True,
     float32_matmul_precision: str = "high",
 ) -> None:
     """Evaluate the model."""
@@ -35,7 +34,6 @@ def evaluate_model(
         device,
         resolution,
         batch_size,
-        save_mesh,
         float32_matmul_precision,
     )
 

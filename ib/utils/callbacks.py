@@ -27,7 +27,6 @@ class EvaluatorCallback(L.Callback):
             model=pl_module,
             resolution=self.eval_cfg.resolution,
             batch_size=self.eval_cfg.batch_size,
-            save_mesh=self.eval_cfg.save_mesh,
         )
         logging.panel(f"Results: Epoch {pl_module.current_epoch}.", yaml.dump(results))
 
