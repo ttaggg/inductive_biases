@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial import KDTree
 
 from ib.utils.data import load_pointcloud, write_ply
+from ib.utils.labels import LABELS
 from ib.utils.pointcloud import filter_incorrect_normals
 
 
@@ -111,11 +112,10 @@ class NormalCosineSimilarity:
         self,
         pred_vertices: np.ndarray,
         pred_normals: np.ndarray,
-        radius: float = 0.0075,
+        radius: float = 0.003,
         save_path: Optional[Path] = None,
     ) -> dict[str, float]:
         pred_tree = KDTree(pred_vertices)
-
         # Compare with the best normal in some radius.
         radius_sims_t2p = self._compute_directional_similarity_radius(
             self.tree, self.normals, pred_tree, pred_normals, radius
@@ -165,7 +165,7 @@ class NormalCosineSimilarity:
 
         results = {
             "metrics/normal_similarity": float(normal_similarity),
-            "metrics/normal_similarity_t2p": float(combined_sims_t2p.mean()),
+            "metrics_main/normal_similarity_t2p": float(combined_sims_t2p.mean()),
             "metrics/normal_similarity_p2t": float(combined_sims_p2t.mean()),
             "metrics/ratio_nan_t2p": float(
                 np.isnan(radius_sims_t2p).sum() / len(radius_sims_t2p)
@@ -173,7 +173,17 @@ class NormalCosineSimilarity:
             "metrics/ratio_nan_p2t": float(
                 np.isnan(radius_sims_p2t).sum() / len(radius_sims_p2t)
             ),
+            "metrics_main/closest_sims_t2p": float(closest_sims_t2p.mean()),
         }
+
+        for label_name, label_inx in LABELS.items():
+            mask_label = self.labels == label_inx
+            results[f"metrics_labels/normalsclosest_{label_name}_t2p"] = float(
+                closest_sims_t2p[mask_label].mean()
+            )
+            results[f"metrics_labels/normals_{label_name}_t2p"] = float(
+                combined_sims_t2p[mask_label].mean()
+            )
 
         if self.labels is not None:
             mask_self = self.labels > 0
@@ -183,25 +193,42 @@ class NormalCosineSimilarity:
             # Low-resolution regions.
             low_freq_t2p = combined_sims_t2p[mask_self].mean()
             low_freq_p2t = combined_sims_p2t[mask_pred].mean()
-            results["metrics/normal_similarity_low_freq_t2p"] = float(low_freq_t2p)
-            results["metrics/normal_similarity_low_freq_p2t"] = float(low_freq_p2t)
-            results["metrics/normal_similarity_low_freq"] = float(
-                (low_freq_t2p + low_freq_p2t) / 2.0
+            results["metrics_main/normals_low_freq_t2p"] = float(low_freq_t2p)
+            results["metrics/normals_low_freq_p2t"] = float(low_freq_p2t)
+            closest_t2p_low_freq = closest_sims_t2p[mask_self].mean()
+            results["metrics_main/normals_closest_low_freq_t2p"] = float(
+                closest_t2p_low_freq
             )
 
             # Other regions.
             mask_self_hf = self.labels < 0
             mask_pred_hf = self.labels[idx_pred] < 0
             high_freq_t2p = combined_sims_t2p[mask_self_hf].mean()
+
             high_freq_p2t = combined_sims_p2t[mask_pred_hf].mean()
-            results["metrics/normal_similarity_high_freq_t2p"] = float(high_freq_t2p)
-            results["metrics/normal_similarity_high_freq_p2t"] = float(high_freq_p2t)
-            results["metrics/normal_similarity_high_freq"] = float(
-                (high_freq_t2p + high_freq_p2t) / 2.0
+            results["metrics_main/normals_high_freq_t2p"] = float(high_freq_t2p)
+            results["metrics/normal_high_freq_p2t"] = float(high_freq_p2t)
+            closest_t2p_high_freq = closest_sims_t2p[mask_self_hf].mean()
+            results["metrics_main/normals_closest_high_freq_t2p"] = float(
+                closest_t2p_high_freq
             )
 
             # Label-dependent visualizations
             if save_path is not None:
+                self.visualize_and_save_colormaps(
+                    self.vertices,
+                    self.normals,
+                    closest_sims_t2p,
+                    save_path.with_name(f"{save_path.stem}_closest_target_lf_p2t.ply"),
+                    mask_self,
+                )
+                self.visualize_and_save_colormaps(
+                    self.vertices,
+                    self.normals,
+                    closest_sims_t2p,
+                    save_path.with_name(f"{save_path.stem}_closest_target_hf_p2t.ply"),
+                    mask_self_hf,
+                )
                 self.visualize_and_save_colormaps(
                     pred_vertices,
                     pred_normals,
