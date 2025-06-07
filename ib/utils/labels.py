@@ -11,10 +11,8 @@ LABELS = {
     "lamp": -6,
     "chair": -5,
     "heater": -4,
-    "light switch": -3,
     "laptop stand": -2,
     "socket": -1,
-    "whiteboard": 1,
     "window": 2,
     "wall": 3,
 }
