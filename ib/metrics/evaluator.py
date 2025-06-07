@@ -9,7 +9,6 @@ import torch
 from torch import nn
 
 from ib.metrics.chamfer_distance import ChamferDistance
-from ib.metrics.fourier_freq import FourierFrequency
 from ib.metrics.normal_distance import NormalCosineSimilarity
 from ib.models.decoders import SdfDecoder
 from ib.utils.data import load_pointcloud, load_ply
@@ -21,7 +20,6 @@ from ib.utils.logging_module import logging
 
 class Metric(str, Enum):
     chamfer = "chamfer"
-    ff = "fourier_freq"
     normals = "normals"
 
 
@@ -36,8 +34,6 @@ def _resolve_metrics(metric: list[Metric], gt_data: dict[str, np.ndarray]) -> di
         mapping[Metric.normals] = NormalCosineSimilarity.from_pointcloud(
             gt_data["points"], gt_data["normals"], gt_data["labels"]
         )
-    if Metric.ff in metric:
-        mapping[Metric.ff] = FourierFrequency()
 
     return mapping
 
@@ -176,9 +172,5 @@ class Evaluator:
                     / f"normals_similarity_epoch_{current_epoch}_res_{resolution}",
                 )
             )
-
-        # if Metric.ff in self.metrics:
-        #     logging.info(f"Computing Fourier frequency.")
-        #     results.update(self.metrics[Metric.ff](decoder.sdf))
 
         return results
