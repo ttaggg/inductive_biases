@@ -4,3 +4,4 @@ resolution: 1024
 metric_names:
     - chamfer
     - normals
+    - curve

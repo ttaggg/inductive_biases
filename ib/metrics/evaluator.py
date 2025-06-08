@@ -9,6 +9,7 @@ import torch
 from torch import nn
 
 from ib.metrics.chamfer_distance import ChamferDistance
+from ib.metrics.local_curvature import CurvatureNormalChangeRate
 from ib.metrics.normal_distance import NormalCosineSimilarity
 from ib.models.decoders import SdfDecoder
 from ib.utils.data import load_pointcloud, load_ply
@@ -25,6 +26,7 @@ from ib.utils.logging_module import logging
 class Metric(str, Enum):
     chamfer = "chamfer"
     normals = "normals"
+    curve = "curve"
 
 
 def _resolve_metrics(metric: list[Metric], gt_data: dict[str, np.ndarray]) -> dict:
@@ -38,7 +40,10 @@ def _resolve_metrics(metric: list[Metric], gt_data: dict[str, np.ndarray]) -> di
         mapping[Metric.normals] = NormalCosineSimilarity.from_pointcloud(
             gt_data["points"], gt_data["normals"], gt_data["labels"]
         )
-
+    if Metric.curve in metric:
+        mapping[Metric.curve] = CurvatureNormalChangeRate.from_pointcloud(
+            gt_data["points"], gt_data["normals"], gt_data["labels"]
+        )
     return mapping
 
 
@@ -175,6 +180,10 @@ class Evaluator:
                     / f"normals_similarity_epoch_{current_epoch}_res_{resolution}",
                 )
             )
+
+        if Metric.curve in self.metrics:
+            logging.info(f"Computing Curvature Normal Change Rate.")
+            results.update(self.metrics[Metric.curve](pred_verts, pred_normals))
 
         with open(save_results_file, "w") as f:
             json.dump(dict(sorted(results.items())), f, indent=4)
