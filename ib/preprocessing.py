@@ -1,7 +1,9 @@
 from pathlib import Path
 from typing import Annotated
 
+import numpy as np
 import typer
+import open3d as o3d
 
 from ib.utils.data import load_ply, write_ply
 from ib.utils.labels import compute_labels
@@ -23,6 +25,13 @@ def generate_output_path(file_path: Path, margin: float) -> Path:
     )
 
 
+def generate_output_recon_mesh_path(file_path: Path, margin: float) -> Path:
+    margin = str(margin).replace(".", "")
+    return file_path.with_name(
+        f"{file_path.stem}_recon_mesh_{margin}{file_path.suffix}"
+    )
+
+
 @app.command(no_args_is_help=True)
 @measure_time
 def evaluation(
@@ -33,6 +42,7 @@ def evaluation(
     y_range: tuple[float, float] = typer.Option((-1, 1)),
     z_range: tuple[float, float] = typer.Option((-1, 1)),
     margin: float = typer.Option(0.1),
+    recon_mesh: bool = typer.Option(False),
 ) -> None:
     """Preprocess pointcloud.
     
@@ -76,6 +86,32 @@ def evaluation(
     # Save the pointcloud.
     output_path = generate_output_path(input_path, margin)
     write_ply(output_path, points_final, normals_final, colors_final, labels_final)
+
+    if recon_mesh:
+
+        logging.info("Generating reconstruction mesh. It takes 15+ minutes.")
+
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(points_final)
+        pcd.normals = o3d.utility.Vector3dVector(normals_final)
+        pcd.colors = o3d.utility.Vector3dVector(colors_final)
+
+        mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
+            pcd, depth=10, width=0, scale=1.1, linear_fit=False
+        )
+
+        densities = np.asarray(densities)
+        density_threshold = np.quantile(densities, 0.01)
+        vertices_to_remove = densities < density_threshold
+        mesh.remove_vertices_by_mask(vertices_to_remove)
+
+        output_recon_mesh_path = generate_output_recon_mesh_path(input_path, margin)
+        write_ply(
+            output_recon_mesh_path,
+            points=np.array(mesh.vertices),
+            normals=np.array(mesh.vertex_normals),
+            faces=np.array(mesh.triangles),
+        )
 
 
 if __name__ == "__main__":
