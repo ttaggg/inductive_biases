@@ -16,9 +16,16 @@ app = typer.Typer(add_completion=False)
 @app.command(no_args_is_help=True)
 @measure_time
 def evaluate_model(
-    model_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)] = None,
-    metric: list[Metric] = typer.Option(...),
-    file_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)] = None,
+    model_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
+    file_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
+    metric: list[Metric] = typer.Option(
+        [
+            Metric.chamfer,
+            Metric.normals,
+            Metric.curve,
+            Metric.lpips,
+        ]
+    ),
     resolution: int = 1024,
     batch_size: int = 500000,
     device: str = "cuda",

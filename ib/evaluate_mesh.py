@@ -16,9 +16,16 @@ app = typer.Typer(add_completion=False)
 @app.command(no_args_is_help=True)
 @measure_time
 def evaluation(
-    mesh_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)] = None,
-    metric: list[Metric] = typer.Option(...),
-    file_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)] = None,
+    mesh_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
+    file_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
+    metric: list[Metric] = typer.Option(
+        [
+            Metric.chamfer,
+            Metric.normals,
+            Metric.curve,
+            Metric.lpips,
+        ]
+    ),
 ) -> None:
     """Evaluate the mesh."""
 
