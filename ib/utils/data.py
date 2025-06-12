@@ -5,6 +5,7 @@ from typing import Callable, Optional
 from typing_extensions import deprecated
 
 import numpy as np
+import open3d as o3d
 from plyfile import PlyData, PlyElement
 
 from ib.utils.logging_module import logging
@@ -54,7 +55,7 @@ def load_pointcloud(file_path: Path) -> dict[str, np.ndarray]:
     return pc_data
 
 
-def load_ply(file_path: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def load_ply(file_path: str) -> dict[str, np.ndarray]:
     """Loads data from a PLY file."""
     ply_data = PlyData.read(file_path)
     ply = ply_data["vertex"]
@@ -89,6 +90,14 @@ def load_xyz(file_path: str) -> tuple[np.ndarray, np.ndarray]:
     points = point_cloud[:, :3]
     normals = point_cloud[:, 3:]
     return points, normals
+
+
+def make_o3d_mesh(vertices: np.ndarray, faces: np.ndarray) -> o3d.geometry.TriangleMesh:
+    """Create mesh object from vertices and faces."""
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(vertices)
+    mesh.triangles = o3d.utility.Vector3iVector(faces)
+    return mesh
 
 
 @deprecated("Do not use obj files")

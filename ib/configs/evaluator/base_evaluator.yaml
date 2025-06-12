@@ -5,3 +5,4 @@ metric_names:
     - chamfer
     - normals
     - curve
+    - lpips

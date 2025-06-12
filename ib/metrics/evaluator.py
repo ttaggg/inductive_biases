@@ -5,14 +5,16 @@ from enum import Enum
 from pathlib import Path
 
 import numpy as np
+import open3d as o3d
 import torch
 from torch import nn
 
 from ib.metrics.chamfer_distance import ChamferDistance
 from ib.metrics.local_curvature import CurvatureNormalChangeRate
+from ib.metrics.lpips import LpipsMetric
 from ib.metrics.normal_distance import NormalCosineSimilarity
 from ib.models.decoders import SdfDecoder
-from ib.utils.data import load_pointcloud, load_ply
+from ib.utils.data import load_pointcloud, load_ply, make_o3d_mesh
 from ib.utils.geometry import mesh_to_pointcloud
 from ib.utils.pipeline import (
     decode_path,
@@ -27,9 +29,12 @@ class Metric(str, Enum):
     chamfer = "chamfer"
     normals = "normals"
     curve = "curve"
+    lpips = "lpips"
 
 
-def _resolve_metrics(metric: list[Metric], gt_data: dict[str, np.ndarray]) -> dict:
+def _resolve_metrics(
+    metric: list[Metric], gt_data: dict[str, np.ndarray], file_path: Path
+) -> dict:
 
     mapping = {}
     if Metric.chamfer in metric:
@@ -44,6 +49,9 @@ def _resolve_metrics(metric: list[Metric], gt_data: dict[str, np.ndarray]) -> di
         mapping[Metric.curve] = CurvatureNormalChangeRate.from_pointcloud(
             gt_data["points"], gt_data["normals"], gt_data["labels"]
         )
+    if Metric.lpips in metric:
+        mapping[Metric.lpips] = LpipsMetric.from_mesh_dir(file_path.parent)
+
     return mapping
 
 
@@ -58,7 +66,7 @@ class Evaluator:
                 self.gt_data["labels"],
             )
         )
-        self.metrics = _resolve_metrics(metric, self.gt_data)
+        self.metrics = _resolve_metrics(metric, self.gt_data, file_path)
         self.num_samples = len(self.gt_data["points"])
 
     def run_from_model_path(
@@ -123,9 +131,11 @@ class Evaluator:
         pred_verts, pred_normals = mesh_to_pointcloud(
             decoder.vertices, decoder.faces, self.num_samples
         )
+        pred_mesh = decoder.mesh
         results = self._run(
             pred_verts,
             pred_normals,
+            pred_mesh,
             resolution,
             current_epoch,
             save_mesh_dir=output_mesh_path.parent,
@@ -138,7 +148,7 @@ class Evaluator:
         data = load_ply(mesh_path)
         vertices, faces = data["points"], data["faces"]
         pred_verts, pred_normals = mesh_to_pointcloud(vertices, faces, self.num_samples)
-
+        pred_mesh = make_o3d_mesh(vertices, faces)
         run_name, current_epoch, resolution = decode_path(mesh_path)
         output_results_path = generate_output_results_path(
             mesh_path.parent, run_name, current_epoch, resolution
@@ -147,6 +157,7 @@ class Evaluator:
         return self._run(
             pred_verts,
             pred_normals,
+            pred_mesh,
             resolution,
             current_epoch,
             save_mesh_dir=mesh_path.parent,
@@ -157,6 +168,7 @@ class Evaluator:
         self,
         pred_verts: np.ndarray,
         pred_normals: np.ndarray,
+        pred_mesh: o3d.geometry.TriangleMesh,
         resolution: int,
         current_epoch: int,
         save_mesh_dir: Path,
@@ -184,6 +196,16 @@ class Evaluator:
         if Metric.curve in self.metrics:
             logging.info(f"Computing Curvature Normal Change Rate.")
             results.update(self.metrics[Metric.curve](pred_verts, pred_normals))
+
+        if Metric.lpips in self.metrics:
+            logging.info(f"Computing LPIPS.")
+            results.update(
+                self.metrics[Metric.lpips](
+                    pred_mesh,
+                    save_path=save_mesh_dir
+                    / f"image_wall_{current_epoch}_res_{resolution}",
+                )
+            )
 
         with open(save_results_file, "w") as f:
             json.dump(dict(sorted(results.items())), f, indent=4)
