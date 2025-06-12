@@ -10,6 +10,7 @@ import torch
 from torch import nn
 
 from ib.metrics.chamfer_distance import ChamferDistance
+from ib.metrics.completeness import Completeness
 from ib.metrics.local_curvature import CurvatureNormalChangeRate
 from ib.metrics.lpips import LpipsMetric
 from ib.metrics.normal_distance import NormalCosineSimilarity
@@ -30,6 +31,7 @@ class Metric(str, Enum):
     normals = "normals"
     curve = "curve"
     lpips = "lpips"
+    complete = "complete"
 
 
 def _resolve_metrics(
@@ -51,6 +53,11 @@ def _resolve_metrics(
         )
     if Metric.lpips in metric:
         mapping[Metric.lpips] = LpipsMetric.from_mesh_dir(file_path.parent)
+
+    if Metric.complete in metric:
+        mapping[Metric.complete] = Completeness.from_pointcloud(
+            gt_data["points"], gt_data["normals"], gt_data["labels"]
+        )
 
     return mapping
 
@@ -206,6 +213,10 @@ class Evaluator:
                     / f"image_wall_{current_epoch}_res_{resolution}",
                 )
             )
+
+        if Metric.complete in self.metrics:
+            logging.info(f"Computing Completeness.")
+            results.update(self.metrics[Metric.complete](pred_verts))
 
         with open(save_results_file, "w") as f:
             json.dump(dict(sorted(results.items())), f, indent=4)

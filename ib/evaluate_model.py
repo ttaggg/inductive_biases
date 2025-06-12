@@ -24,6 +24,7 @@ def evaluate_model(
             Metric.normals,
             Metric.curve,
             Metric.lpips,
+            Metric.complete,
         ]
     ),
     resolution: int = 1024,

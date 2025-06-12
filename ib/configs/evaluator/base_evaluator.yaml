@@ -6,3 +6,4 @@ metric_names:
     - normals
     - curve
     - lpips
+    - complete

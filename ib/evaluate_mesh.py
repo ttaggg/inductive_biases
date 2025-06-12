@@ -24,6 +24,7 @@ def evaluation(
             Metric.normals,
             Metric.curve,
             Metric.lpips,
+            Metric.complete,
         ]
     ),
 ) -> None:
