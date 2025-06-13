@@ -131,17 +131,19 @@ def write_ply(
     normals: Optional[np.ndarray] = None,
     colors: Optional[np.ndarray] = None,
     labels: Optional[np.ndarray] = None,
+    faces: Optional[np.ndarray] = None,
+    face_colors: Optional[np.ndarray] = None,
 ) -> None:
     """Write PLY pointcloud."""
 
     # Define PLY dtype
-    dtype = [
+    vertex_dtype = [
         ("x", "f4"),
         ("y", "f4"),
         ("z", "f4"),
     ]
     if normals is not None:
-        dtype.extend(
+        vertex_dtype.extend(
             [
                 ("nx", "f4"),
                 ("ny", "f4"),
@@ -149,7 +151,7 @@ def write_ply(
             ]
         )
     if colors is not None:
-        dtype.extend(
+        vertex_dtype.extend(
             [
                 ("red", "u1"),
                 ("green", "u1"),
@@ -157,15 +159,15 @@ def write_ply(
             ]
         )
     if labels is not None:
-        dtype.extend(
+        vertex_dtype.extend(
             [
                 ("label", "i4"),
             ]
         )
-    ply_dtype = np.dtype(dtype)
+    ply_vertex_dtype = np.dtype(vertex_dtype)
 
-    # Build structured array
-    vertex_array = np.empty(len(points), dtype=ply_dtype)
+    # Build vertex structured array
+    vertex_array = np.empty(len(points), dtype=ply_vertex_dtype)
     vertex_array["x"] = points[:, 0]
     vertex_array["y"] = points[:, 1]
     vertex_array["z"] = points[:, 2]
@@ -180,6 +182,34 @@ def write_ply(
     if labels is not None:
         vertex_array["label"] = labels
 
-    ply_el = PlyElement.describe(vertex_array, "vertex")
-    PlyData([ply_el]).write(str(file_path))
-    logging.info(f"Saved pointcloud PLY to {file_path}")
+    # Create PLY elements list
+    ply_elements = [PlyElement.describe(vertex_array, "vertex")]
+
+    # Handle faces if provided
+    if faces is not None:
+        # Define face PLY dtype
+        face_dtype = [("vertex_indices", "i4", (3,))]
+        if face_colors is not None:
+            face_dtype.extend(
+                [
+                    ("red", "u1"),
+                    ("green", "u1"),
+                    ("blue", "u1"),
+                ]
+            )
+        ply_face_dtype = np.dtype(face_dtype)
+
+        # Build face structured array
+        face_array = np.empty(len(faces), dtype=ply_face_dtype)
+        face_array["vertex_indices"] = faces
+        if face_colors is not None:
+            face_array["red"] = face_colors[:, 0]
+            face_array["green"] = face_colors[:, 1]
+            face_array["blue"] = face_colors[:, 2]
+
+        ply_elements.append(PlyElement.describe(face_array, "face"))
+
+    # Write PLY file
+    PlyData(ply_elements).write(str(file_path))
+    mesh_info = "mesh" if faces is not None else "pointcloud"
+    logging.info(f"Saved {mesh_info} PLY to {file_path}")
