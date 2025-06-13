@@ -5,8 +5,9 @@ from typing import Optional
 import numpy as np
 
 
-def normalize_pointcloud(
+def normalize_pointcloud_and_mesh(
     points: np.ndarray,
+    mesh_points: np.ndarray,
     bounds_min: np.ndarray = np.array([-1.0, -1.0, -1.0]),
     bounds_max: np.ndarray = np.array([1.0, 1.0, 1.0]),
 ) -> tuple[np.ndarray, dict]:
@@ -19,11 +20,16 @@ def normalize_pointcloud(
     # Center points around origin of target box
     points_centered = points - (points_min + points_max) / 2.0
     target_center = (bounds_min + bounds_max) / 2.0
-    return points_centered * s + target_center
+    # Apply same transformation to both mesh and pointcloud.
+    points_norm = points_centered * s + target_center
+    mesh_points_centered = mesh_points - (points_min + points_max) / 2.0
+    mesh_points_norm = mesh_points_centered * s + target_center
+    return points_norm, mesh_points_norm
 
 
-def normalize_pointcloud_with_margin(
+def normalize_pointcloud_and_mesh_with_margin(
     points: np.ndarray,
+    mesh_points: np.ndarray,
     bounds_min: np.ndarray = np.array([-1.0, -1.0, -1.0]),
     bounds_max: np.ndarray = np.array([1.0, 1.0, 1.0]),
     margin: float = 0.1,
@@ -31,40 +37,75 @@ def normalize_pointcloud_with_margin(
     size = bounds_max - bounds_min
     new_min = bounds_min + margin * size
     new_max = bounds_max - margin * size
-    return normalize_pointcloud(points, bounds_min=new_min, bounds_max=new_max)
+    return normalize_pointcloud_and_mesh(
+        points,
+        mesh_points,
+        bounds_min=new_min,
+        bounds_max=new_max,
+    )
 
 
-def filter_pointcloud(
+def filter_pointcloud_and_mesh(
     points: np.ndarray,
-    normals: Optional[np.ndarray] = None,
-    colors: Optional[np.ndarray] = None,
-    labels: Optional[np.ndarray] = None,
+    normals: np.ndarray,
+    colors: np.ndarray,
+    labels: np.ndarray,
+    mesh: dict[str, np.ndarray],
     thresholds: tuple[tuple] = (
         (-1, 1),
         (-1, 1),
         (-1, 1),
     ),
-    random_seed: int = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    dict[str, np.ndarray],
+]:
     """Cut parts of the scene based on thresholds."""
-
-    if random_seed is not None:
-        np.random.seed(random_seed)
 
     # build boolean mask of points inside the threshold box
     mins = np.array([thresholds[0][0], thresholds[1][0], thresholds[2][0]])
     maxs = np.array([thresholds[0][1], thresholds[1][1], thresholds[2][1]])
-    inside_mask = np.all((points >= mins) & (points <= maxs), axis=1)
+    inside_mask_points = np.all((points >= mins) & (points <= maxs), axis=1)
 
-    points = points[inside_mask]
-    if normals is not None:
-        normals = normals[inside_mask]
-    if colors is not None:
-        colors = colors[inside_mask]
-    if labels is not None:
-        labels = labels[inside_mask]
+    # Apply to the pointcloud.
+    points = points[inside_mask_points]
+    normals = normals[inside_mask_points]
+    colors = colors[inside_mask_points]
+    labels = labels[inside_mask_points]
 
-    return points, normals, colors, labels
+    inside_mask_mesh = np.all(
+        (mesh["points"] >= mins) & (mesh["points"] <= maxs), axis=1
+    )
+
+    # Apply to the mesh.
+    mesh["points"] = mesh["points"][inside_mask_mesh]
+
+    # Update mesh normals if they exist
+    if "normals" in mesh:
+        mesh["normals"] = mesh["normals"][inside_mask_mesh]
+
+    # Update mesh colors if they exist
+    if "colors" in mesh:
+        mesh["colors"] = mesh["colors"][inside_mask_mesh]
+
+    # Handle face filtering and vertex index remapping
+    if "faces" in mesh:
+        # Mapping from old vertex indices to new vertex indices
+        old_to_new_idx = np.full(len(inside_mask_mesh), -1, dtype=int)
+        old_to_new_idx[inside_mask_mesh] = np.arange(np.sum(inside_mask_mesh))
+
+        # Only include faces where all vertices are present
+        faces = mesh["faces"]
+        valid_faces_mask = np.all(inside_mask_mesh[faces], axis=1)
+        valid_faces = faces[valid_faces_mask]
+
+        # Remap vertex indices in valid faces
+        mesh["faces"] = old_to_new_idx[valid_faces]
+
+    return points, normals, colors, labels, mesh
 
 
 def filter_incorrect_normals(
