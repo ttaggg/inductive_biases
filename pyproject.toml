@@ -11,11 +11,13 @@ dependencies = [
     "matplotlib>=3.10.0",
     "numpy>=2.2.0",
     "open3d==0.19.0",
+    "pandas>=2.2.3",
     "plyfile>=1.1",
     "python-dotenv>=1.1.0",
     "rich>=13.9.4",
     "scikit-image>=0.25.0",
     "scipy>=1.14.1",
+    "seaborn>=0.13.2",
     "tensorboard>=2.18.0",
     "torch==2.5.1",
     "torchvision>=0.20.1",
@@ -35,3 +37,4 @@ label_complexity_evaluation = "ib.label_complexity_evaluation:app"
 preprocessing = "ib.preprocessing:app"
 resampling = "ib.resampling:app"
 training = "ib.training:app"
+visualization = "ib.visualization:app"
