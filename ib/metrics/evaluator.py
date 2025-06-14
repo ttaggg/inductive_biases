@@ -158,7 +158,7 @@ class Evaluator:
         pred_mesh = make_o3d_mesh(vertices, faces)
         run_name, current_epoch, resolution = decode_path(mesh_path)
         output_results_path = generate_output_results_path(
-            mesh_path.parent, run_name, current_epoch, resolution
+            mesh_path.parent.parent, run_name, current_epoch, resolution
         )
 
         return self._run(

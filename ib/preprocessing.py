@@ -32,7 +32,7 @@ def generate_output_recon_mesh_path(file_path: Path, margin: float) -> Path:
 
 @app.command(no_args_is_help=True)
 @measure_time
-def evaluation(
+def preprocessing(
     input_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
     recon_mesh_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
     labels_mesh_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
