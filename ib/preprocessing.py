@@ -34,9 +34,6 @@ def generate_output_recon_mesh_path(file_path: Path, margin: float) -> Path:
 @measure_time
 def preprocessing(
     input_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
-    recon_mesh_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
-    labels_mesh_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
-    labels_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
     x_range: tuple[float, float] = typer.Option((-1, 1)),
     y_range: tuple[float, float] = typer.Option((-1, 1)),
     z_range: tuple[float, float] = typer.Option((-1, 1)),
@@ -47,9 +44,6 @@ def preprocessing(
     Example:
     uv run preprocessing \
         --input-path=<path_to_data>/pc_aligned.ply \
-        --recon-mesh-path=<path_to_data>/simplified_0.1250_mesh_aligned.ply \
-        --label-mesh-path=<path_to_data>/mesh_aligned_0.05.ply \
-        --labels-path=<path_to_data>/segments_anno.json \
         --x-range 0 1 \
         --y-range -0.2 1 \
         --z-range -1 0.2 \
@@ -57,6 +51,11 @@ def preprocessing(
     """
 
     logging.stage("Running preprocessing.")
+
+    labels_path = input_path.parent / "segments_anno.json"
+    labels_mesh_path = input_path.parent / "mesh_aligned_0.05.ply"
+    recon_mesh_path = input_path.parent / "simplified_0.1250_mesh_aligned.ply"
+
     logging.info(f"Pointcloud: {input_path}")
     logging.info(f"Reconstructed mesh: {recon_mesh_path}")
     logging.info(f"Reference mesh: {labels_mesh_path}")
