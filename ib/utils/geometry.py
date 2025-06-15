@@ -52,7 +52,7 @@ def sparse_sdf_to_sdf_volume(
 
 def orient_mesh(
     mesh: o3d.geometry.TriangleMesh,
-    outside_pt: list = [-1.0, -1.0, 1.0],
+    outside_pt: list = [0.0, 0.0, 0.0],
 ) -> None:
 
     outside_pt = np.array(outside_pt, dtype=np.float32)
