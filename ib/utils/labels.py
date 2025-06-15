@@ -7,15 +7,31 @@ from scipy.spatial import KDTree
 from ib.utils.data import load_ply
 from ib.utils.logging_module import logging
 
+# TODO(oleg): set labels in the config
+# LABELS = {
+#     "lamp": -6,
+#     "chair": -5,
+#     "heater": -4,
+#     "laptop stand": -2,
+#     "socket": -1,
+#     "window": 2,
+#     "wall": 3,
+# }
+
 LABELS = {
-    "lamp": -6,
-    "chair": -5,
-    "heater": -4,
-    "laptop stand": -2,
-    "socket": -1,
-    "window": 2,
-    "wall": 3,
+    "stairs": -7,
+    "power socket unit": -8,
+    "machine": -9,
+    "compressor": -10,
+    "window frame": 4,
+    "floor": 5,
+    "electrical box": 6,
+    "door": 7,
+    "door frame": 8,
 }
+
+
+INX_TO_LABEL = {v: k for k, v in LABELS.items()}
 
 
 def _load_labels(filepath: Path) -> list[tuple]:

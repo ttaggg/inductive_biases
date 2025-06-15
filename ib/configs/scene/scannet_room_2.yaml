@@ -1,0 +1,7 @@
+# Scannet++, id: 5fb5d2dbf2
+# uv run preprocessing --input-path=~/datasets/3d_scenes/scannet_room_2/pc_aligned.ply --x-range -0.65 0.6 --y-range 0.0 1.0 --z-range -1.0 -0.05 --rotation-angle 1.0 --margin 0.005
+defaults:
+  - dataset: ply_dataset
+
+name: scannet_room_1
+file_path: ${oc.env:HOME}/datasets/3d_scenes/scannet_room_2/pc_aligned_filtered_trimmed_both_0005.ply

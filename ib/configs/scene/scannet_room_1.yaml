@@ -1,5 +1,5 @@
 # Scannet++, id: 8b5caf3398
-# uv run preprocessing --input-path=~/datasets/3d_scenes/scannet_room_1/pc_aligned.ply --x-range 0 0.94 --y-range -0.2 0.64 --z-range -0.49 0.2 --margin 0.005 --mesh-path=~/datasets/3d_scenes/scannet_room_1/original_mesh.ply --labels-path=~/datasets/3d_scenes/scannet_room_1/segments_anno.json
+# uv run preprocessing --input-path=~/datasets/3d_scenes/scannet_room_1/pc_aligned.ply --x-range 0 0.94 --y-range -0.2 0.64 --z-range -0.49 0.2 --margin 0.005
 
 defaults:
   - dataset: ply_dataset
