@@ -11,6 +11,7 @@ from ib.utils.pointcloud import (
     normalize_pointcloud_and_mesh,
     normalize_pointcloud_and_mesh_with_margin,
     filter_pointcloud_and_mesh,
+    rotate_around_z_axis,
 )
 
 app = typer.Typer(add_completion=False)
@@ -38,6 +39,7 @@ def preprocessing(
     y_range: tuple[float, float] = typer.Option((-1, 1)),
     z_range: tuple[float, float] = typer.Option((-1, 1)),
     margin: float = typer.Option(0.1),
+    rotation_angle: float = typer.Option(0.0),
 ) -> None:
     """Preprocess pointcloud.
     
@@ -47,7 +49,8 @@ def preprocessing(
         --x-range 0 1 \
         --y-range -0.2 1 \
         --z-range -1 0.2 \
-        --margin 0.1
+        --margin 0.1 \
+        --rotation-angle 0.0
     """
 
     logging.stage("Running preprocessing.")
@@ -62,6 +65,7 @@ def preprocessing(
     logging.info(f"Reference labels: {labels_path}")
     logging.info(f"Thresholds: x: {x_range}, y: {y_range}, z: {z_range}")
     logging.info(f"Margin: {margin}")
+    logging.info(f"Rotation angle (z-axis): {rotation_angle} radians")
 
     # Load and normalize pointcloud.
     data = load_ply(input_path)
@@ -74,9 +78,11 @@ def preprocessing(
     recon_mesh = load_ply(recon_mesh_path)
 
     # Fit the scene into a bounding box for thresholds.
+    normals_norm = rotate_around_z_axis(normals, rotation_angle)
     points_norm, recon_mesh["points"] = normalize_pointcloud_and_mesh(
         points,
         recon_mesh["points"],
+        rotation_angle=rotation_angle,
     )
 
     # Filter the pointcloud by thresholds.
@@ -84,7 +90,7 @@ def preprocessing(
     points_filtered, normals_final, colors_final, labels_final, recon_mesh = (
         filter_pointcloud_and_mesh(
             points_norm,
-            normals,
+            normals_norm,
             colors,
             labels,
             recon_mesh,

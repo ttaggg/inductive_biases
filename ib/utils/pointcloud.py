@@ -5,13 +5,36 @@ from typing import Optional
 import numpy as np
 
 
+def rotate_around_z_axis(
+    points: np.ndarray,
+    angle: float,
+) -> np.ndarray:
+    """Rotate points around z-axis by given angle."""
+
+    if angle == 0.0:
+        return points
+
+    cos_theta = np.cos(angle)
+    sin_theta = np.sin(angle)
+    rotation_matrix = np.array(
+        [[cos_theta, -sin_theta, 0], [sin_theta, cos_theta, 0], [0, 0, 1]]
+    )
+    return points @ rotation_matrix.T
+
+
 def normalize_pointcloud_and_mesh(
     points: np.ndarray,
     mesh_points: np.ndarray,
     bounds_min: np.ndarray = np.array([-1.0, -1.0, -1.0]),
     bounds_max: np.ndarray = np.array([1.0, 1.0, 1.0]),
-) -> tuple[np.ndarray, dict]:
-    """Linearly maps points to lie within [bounds_min, bounds_max]."""
+    rotation_angle: float = 0.0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Linearly maps points to lie within [bounds_min, bounds_max]
+    and rotates around z-axis."""
+
+    points = rotate_around_z_axis(points, rotation_angle)
+    mesh_points = rotate_around_z_axis(mesh_points, rotation_angle)
+
     points_min = points.min(axis=0)
     points_max = points.max(axis=0)
     scale = (bounds_max - bounds_min) / (points_max - points_min)
@@ -33,7 +56,7 @@ def normalize_pointcloud_and_mesh_with_margin(
     bounds_min: np.ndarray = np.array([-1.0, -1.0, -1.0]),
     bounds_max: np.ndarray = np.array([1.0, 1.0, 1.0]),
     margin: float = 0.1,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     size = bounds_max - bounds_min
     new_min = bounds_min + margin * size
     new_max = bounds_max - margin * size
