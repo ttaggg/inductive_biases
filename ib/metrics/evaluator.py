@@ -209,8 +209,7 @@ class Evaluator:
             results.update(
                 self.metrics[Metric.lpips](
                     pred_mesh,
-                    save_path=save_mesh_dir
-                    / f"image_wall_{current_epoch}_res_{resolution}",
+                    save_path=save_mesh_dir / f"image_{current_epoch}_res_{resolution}",
                 )
             )
 

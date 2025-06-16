@@ -35,7 +35,7 @@ def decoding(
 
     run_name, current_epoch, _ = decode_path(model_path)
     output_path = generate_output_mesh_path(
-        model_path.parent, run_name, current_epoch, resolution
+        model_path.parent.parent, run_name, current_epoch, resolution
     )
     decoder.save(output_path)
 

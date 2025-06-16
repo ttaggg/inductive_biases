@@ -21,8 +21,12 @@ class BaseModel(L.LightningModule):
         self.loss_fn = loss_fn
         self.model_cfg = model_cfg
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        outputs = self.inr(inputs)
+    def forward(
+        self,
+        inputs: torch.Tensor,
+        return_meta: bool = False,
+    ) -> torch.Tensor:
+        outputs = self.inr(inputs, return_meta=return_meta)
         return outputs
 
     def training_step(self, model_inputs: dict[str, torch.Tensor], _) -> torch.Tensor:
