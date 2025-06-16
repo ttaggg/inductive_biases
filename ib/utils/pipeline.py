@@ -32,7 +32,9 @@ def generate_output_mesh_path(
 ) -> Path:
     meshes_dir = base_dir / "meshes"
     meshes_dir.mkdir(parents=True, exist_ok=True)
-    return meshes_dir / f"mesh_{run_name}_epoch_{current_epoch}_res_{resolution}.ply"
+    return (
+        meshes_dir / f"mesh_model_{run_name}_epoch_{current_epoch}_res_{resolution}.ply"
+    )
 
 
 def generate_output_results_path(
@@ -49,9 +51,10 @@ def generate_output_results_path(
 
 
 def decode_path(mesh_path: Path) -> tuple[str, int, int]:
-    # Try first with resolution
+    # Try pattern with resolution
+    # Support accidental misnaming of the mesh file.
     m = re.search(
-        r"model_(?P<run_name>.+?)_epoch_(?P<epoch>\d+)_res_(?P<res>\d+)",
+        r"(?:mesh_model_|mesh_|model_)(?P<run_name>.+?)_epoch_(?P<epoch>\d+)_res_(?P<res>\d+)",
         mesh_path.stem,
     )
     if m is not None:
@@ -60,9 +63,9 @@ def decode_path(mesh_path: Path) -> tuple[str, int, int]:
         resolution = int(m.group("res"))
         return run_name, current_epoch, resolution
 
-    # Try without resolution
+    # Try pattern without resolution (legacy)
     m = re.search(
-        r"model_(?P<run_name>.+?)_epoch_(?P<epoch>\d+)",
+        r"(?:mesh_model_|mesh_|model_)(?P<run_name>.+?)_epoch_(?P<epoch>\d+)",
         mesh_path.stem,
     )
     if m is not None:
