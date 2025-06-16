@@ -52,10 +52,23 @@ class ChamferDistance:
 
         label_indices = np.unique(self.labels)
         for label_inx in label_indices:
+            # Target to predicted.
             label_name = INX_TO_LABEL.get(label_inx, "unknown")
             mask_label = self.labels == label_inx
+            label_dist_t2p_mean = dist_t2p[mask_label].mean()
             results[f"metrics_labels/chamfer_{label_name}_t2p"] = float(
-                dist_t2p[mask_label].mean()
+                label_dist_t2p_mean
+            )
+            # Predicted to target.
+            pred_labels = self.labels[idx_p2t]
+            mask_pred_label = pred_labels == label_inx
+            label_dist_p2t_mean = dist_p2t[mask_pred_label].mean()
+            results[f"metrics_labels/chamfer_{label_name}_p2t"] = float(
+                label_dist_p2t_mean
+            )
+            # Mean.
+            results[f"metrics_labels/chamfer_{label_name}"] = float(
+                (label_dist_t2p_mean + label_dist_p2t_mean) / 2.0
             )
 
         if self.labels is not None:
