@@ -6,7 +6,7 @@ import numpy as np
 from scipy.spatial import KDTree
 
 from ib.utils.data import load_pointcloud
-from ib.utils.labels import LABELS
+from ib.utils.labels import INX_TO_LABEL
 from ib.utils.pointcloud import filter_incorrect_normals
 
 
@@ -65,7 +65,9 @@ class Completeness:
             matches = self._compute_completeness(pred_vertices, radius)
             results[f"metrics_main/completeness_{str_radius}"] = float(matches.mean())
 
-            for label_name, label_inx in LABELS.items():
+            label_indices = np.unique(self.labels)
+            for label_inx in label_indices:
+                label_name = INX_TO_LABEL.get(label_inx, "unknown")
                 mask_label = self.labels == label_inx
                 results[f"metrics_labels/completeness_{label_name}_{str_radius}"] = (
                     float(matches[mask_label].mean())

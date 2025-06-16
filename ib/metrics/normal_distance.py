@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial import KDTree
 
 from ib.utils.data import load_pointcloud, write_ply
-from ib.utils.labels import LABELS
+from ib.utils.labels import INX_TO_LABEL
 from ib.utils.pointcloud import filter_incorrect_normals
 
 
@@ -176,7 +176,9 @@ class NormalCosineSimilarity:
             "metrics_main/closest_sims_t2p": float(closest_sims_t2p.mean()),
         }
 
-        for label_name, label_inx in LABELS.items():
+        label_indices = np.unique(self.labels)
+        for label_inx in label_indices:
+            label_name = INX_TO_LABEL.get(label_inx, "unknown")
             mask_label = self.labels == label_inx
             results[f"metrics_labels/normalsclosest_{label_name}_t2p"] = float(
                 closest_sims_t2p[mask_label].mean()

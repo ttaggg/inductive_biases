@@ -8,16 +8,6 @@ from ib.utils.data import load_ply
 from ib.utils.logging_module import logging
 
 # TODO(oleg): set labels in the config
-# LABELS = {
-#     "lamp": -6,
-#     "chair": -5,
-#     "heater": -4,
-#     "laptop stand": -2,
-#     "socket": -1,
-#     "window": 2,
-#     "wall": 3,
-# }
-
 LABELS = {
     "stairs": -7,
     "power socket unit": -8,
@@ -28,6 +18,14 @@ LABELS = {
     "electrical box": 6,
     "door": 7,
     "door frame": 8,
+    ##
+    "lamp": -6,
+    "chair": -5,
+    "heater": -4,
+    "laptop stand": -2,
+    "socket": -1,
+    "window": 2,
+    "wall": 3,
 }
 
 
