@@ -5,3 +5,4 @@ hidden_features: 256
 hidden_layers: 3
 first_omega: 30
 hidden_omega: 30
+weight_magnitude: 6.0

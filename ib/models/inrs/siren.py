@@ -28,6 +28,7 @@ class SineLayer(nn.Module):
         is_first: bool = False,
         is_last: bool = False,
         omega_0: float = 30.0,
+        weight_magnitude: float = 6.0,
     ) -> None:
         super().__init__()
         self.omega_0 = omega_0
@@ -35,16 +36,16 @@ class SineLayer(nn.Module):
         self.is_last = is_last
         self.in_features = in_features
         self.linear = nn.Linear(in_features, out_features, bias=bias)
-        self.init_weights()
+        self.init_weights(weight_magnitude)
 
-    def init_weights(self) -> None:
+    def init_weights(self, weight_magnitude: float) -> None:
         with torch.no_grad():
             if self.is_first:
                 self.linear.weight.uniform_(-1 / self.in_features, 1 / self.in_features)
             else:
                 self.linear.weight.uniform_(
-                    -np.sqrt(6 / self.in_features) / self.omega_0,
-                    np.sqrt(6 / self.in_features) / self.omega_0,
+                    -np.sqrt(weight_magnitude / self.in_features) / self.omega_0,
+                    np.sqrt(weight_magnitude / self.in_features) / self.omega_0,
                 )
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
@@ -63,6 +64,7 @@ class Siren(nn.Module):
         out_features: int,
         first_omega: float = 30.0,
         hidden_omega: float = 30.0,
+        weight_magnitude: float = 6.0,
     ) -> None:
         super().__init__()
 
@@ -73,6 +75,7 @@ class Siren(nn.Module):
                 hidden_features,
                 is_first=True,
                 omega_0=first_omega,
+                weight_magnitude=weight_magnitude,
             )
         )
         for _ in range(hidden_layers):
@@ -81,6 +84,7 @@ class Siren(nn.Module):
                     hidden_features,
                     hidden_features,
                     omega_0=hidden_omega,
+                    weight_magnitude=weight_magnitude,
                 )
             )
         layers.append(
@@ -89,6 +93,7 @@ class Siren(nn.Module):
                 out_features,
                 is_last=True,
                 omega_0=hidden_omega,
+                weight_magnitude=weight_magnitude,
             )
         )
 
