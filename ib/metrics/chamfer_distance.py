@@ -81,6 +81,9 @@ class ChamferDistance:
             low_freq_p2t_mean = low_freq_p2t.mean()
             results["metrics_main/chamfer_low_freq_t2p"] = float(low_freq_t2p_mean)
             results["metrics/chamfer_low_freq_p2t"] = float(low_freq_p2t_mean)
+            results["metrics/chamfer_low_freq"] = float(
+                (low_freq_t2p_mean + low_freq_p2t_mean) / 2.0
+            )
 
             # Other regions.
             mask_others = self.labels < 0
@@ -90,5 +93,7 @@ class ChamferDistance:
             high_freq_p2t_mean = high_freq_p2t.mean()
             results["metrics_main/chamfer_high_freq_t2p"] = float(high_freq_t2p_mean)
             results["metrics/chamfer_high_freq_p2t"] = float(high_freq_p2t_mean)
-
+            results["metrics/chamfer_high_freq"] = float(
+                (high_freq_t2p_mean + high_freq_p2t_mean) / 2.0
+            )
         return results
