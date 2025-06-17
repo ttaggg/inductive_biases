@@ -296,46 +296,66 @@ def visualization(
     logging.stage("Running visualization.")
 
     METRICS_TO_SHOW = {
-        "Chamfer, High Freq, P2T": "metrics/chamfer_high_freq_p2t",
-        "Chamfer, High Freq, T2P": "metrics_main/chamfer_high_freq_t2p",
-        "Chamfer, Low Freq, P2T": "metrics/chamfer_low_freq_p2t",
-        "Chamfer, Low Freq, T2P": "metrics_main/chamfer_low_freq_t2p",
-        "Chamfer, T2P": "metrics_main/chamfer_t2p",
-        "Chamfer, P2T": "metrics/chamfer_p2t",
-        "LPIPS, Low Freq": "metrics_main/lpips_low",
-        "LPIPS, High Freq": "metrics_main/lpips_high",
-        "Completeness, High Freq, 0003": "metrics_main/completeness_high_freq_0003",
-        "Completeness, Low Freq, 0003": "metrics_main/completeness_low_freq_0003",
-        "Curvature, Mean": "curvature_mean",
-        "Curvature, Median": "curvature_median",
+        "Chair": "metrics_labels/chamfer_chair_t2p",
+        "Heater": "metrics_labels/chamfer_heater_t2p",
+        "Lamp": "metrics_labels/chamfer_lamp_t2p",
+        "Laptop stand": "metrics_labels/chamfer_laptop stand_t2p",
+        "Socket": "metrics_labels/chamfer_socket_t2p",
+        "Wall": "metrics_labels/chamfer_wall_t2p",
+        "Window": "metrics_labels/chamfer_window_t2p",
+        # "Chamfer, High Freq, P2T": "metrics/chamfer_high_freq_p2t",
+        # "Chamfer, High Freq, T2P": "metrics_main/chamfer_high_freq_t2p",
+        # "Chamfer, Low Freq, P2T": "metrics/chamfer_low_freq_p2t",
+        # "Chamfer, Low Freq, T2P": "metrics_main/chamfer_low_freq_t2p",
+        # "Chamfer, T2P": "metrics_main/chamfer_t2p",
+        # "Chamfer, P2T": "metrics/chamfer_p2t",
+        # "LPIPS, Low Freq": "metrics_main/lpips_low",
+        # "LPIPS, High Freq": "metrics_main/lpips_high",
+        # "Completeness, High Freq, 0003": "metrics_main/completeness_high_freq_0003",
+        # "Completeness, Low Freq, 0003": "metrics_main/completeness_low_freq_0003",
+        # "Curvature, Mean": "curvature_mean",
+        # "Curvature, Median": "curvature_median",
     }
-    EXPERIMENTS = [
-        "25-05-12_siren_newdata_o5",
-        "25-05-13_siren_newdata_o15",
-        "25-05-12_siren_newdata_o30_linter300",
-        "25-05-14_siren_newdata_o45_linter200",
-        "25-05-29_finer_o20_linter500",
-        # "25-06-04_hosc_init",
-        # "25-06-01_double_siren_pe_mlp",
-        # "25-05-21_relu_pe_init_linter100",
-        # "25-05-31_staf_init",
-        "25-05-26_attn_ff_linter100_o20",
-    ]
+    EXPERIMENTS = {
+        # ROOM 2
+        # "SIREN o30": "25-06-15_siren_o30_linter200_room2",
+        # "SIREN-Mod A": "25-06-15_dsiren_linter200_room2",
+        # "FINER": "25-06-15_finer_linter200_room2",
+        # "SIREN-Mod AB": "25-06-15_dsiren_mlp_ab_linter200_room2",
+        # ROOM 1
+        "SIREN-Mod": "25-06-17_dsiren_tanh_ab_room1_mod500",
+        # "SIREN HL 1": "25-06-14_siren_o30_linter200_hl1",
+        # "SIREN HL 5": "25-06-07_siren_o30_hl_5",
+        # "SIREN WL 512": "25-06-14_siren_o30_linter200_wl512",
+        # "SIREN WL 1536": "25-06-09_siren_o30_wl_1536_linter200",
+        # "SIREN o5": "25-05-12_siren_newdata_o5",
+        # "SIREN o15": "25-05-13_siren_newdata_o15",
+        "SIREN o30": "25-05-12_siren_newdata_o30_linter300",
+        # "SIREN o45": "25-05-14_siren_newdata_o45_linter200",
+        "FINER": "25-05-29_finer_o20_linter500",
+        # "HOSC": "25-06-04_hosc_init",
+        "SIREN-Mod-old": "25-06-01_double_siren_pe_mlp",
+        # "ReLU PE": "25-05-21_relu_pe_init_linter100",
+        # "STAFF": "25-05-31_staf_init",
+        # "Attn FF": "25-05-26_attn_ff_linter100_o20",
+    }
 
     # Collect all data
     all_data = []
 
-    for experiment_full_name in EXPERIMENTS:
+    for readable_name, experiment_full_name in EXPERIMENTS.items():
         results_dir = Path(
             f"/home/magnes/outputs/{experiment_full_name}/latest/results/"
         )
         experiment_name = get_exp_name_from_full_name(experiment_full_name)
         logging.info(
-            f"Processing experiment: {experiment_full_name} -> {experiment_name}"
+            f"Processing experiment: {readable_name} ({experiment_full_name}) -> {experiment_name}"
         )
 
         df = parse_results_from_directory(results_dir, experiment_name)
         if not df.empty:
+            # Replace the experiment name with the readable name
+            df["experiment"] = readable_name
             all_data.append(df)
 
     if not all_data:
