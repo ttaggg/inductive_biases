@@ -19,6 +19,7 @@ app = typer.Typer(add_completion=False)
 class PlotType(str, Enum):
     LINE = "line"
     BAR = "bar"
+    COMPARISON = "comparison"
 
 
 def get_exp_name_from_full_name(full_experiment_name: str) -> str:
@@ -212,6 +213,77 @@ def create_metric_barplots(
         plt.close()
 
 
+def create_metric_comparison_plot(
+    data: pd.DataFrame,
+    metrics_to_show: dict[str, str],
+    output_dir: Path,
+) -> None:
+    """Create a grouped bar chart comparing all metrics across different experiments."""
+
+    sns.set_style("whitegrid")
+
+    # Extract the last epoch data for each experiment/model
+    logging.info("Extracting last epoch data for each experiment...")
+    last_epoch_data = []
+    for experiment in data["experiment"].unique():
+        exp_data = data[data["experiment"] == experiment]
+        last_epoch = exp_data["epoch"].max()
+        last_epoch_exp_data = exp_data[exp_data["epoch"] == last_epoch]
+        last_epoch_data.append(last_epoch_exp_data)
+        logging.info(f"  {experiment}: using epoch {last_epoch}")
+
+    if not last_epoch_data:
+        logging.warning("No last epoch data found")
+        return
+
+    last_epoch_df = pd.concat(last_epoch_data, ignore_index=True)
+
+    # Filter to only include the metrics we want to compare
+    filtered_data = last_epoch_df[
+        last_epoch_df["metric_name"].isin(metrics_to_show.values())
+    ].copy()
+
+    if filtered_data.empty:
+        logging.warning("No data found for any of the specified metrics")
+        return
+
+    # Convert internal metric names to readable names
+    metric_name_mapping = {v: k for k, v in metrics_to_show.items()}
+    filtered_data["readable_metric"] = filtered_data["metric_name"].map(
+        metric_name_mapping
+    )
+
+    plt.figure(figsize=(14, 8))
+    sns.barplot(
+        data=filtered_data,
+        x="readable_metric",  # Metrics on X-axis
+        y="metric_value",  # Metric values on Y-axis
+        hue="experiment",  # Different models as different colored bars
+        palette="Blues",
+    )
+
+    plt.title(
+        "Model Comparison",
+        fontsize=16,
+        fontweight="bold",
+    )
+    plt.xlabel("Metrics", fontsize=14)
+    plt.ylabel("Metric Value", fontsize=14)
+    plt.xticks(rotation=45, ha="right")
+    plt.legend(title="Model/Experiment", bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.grid(True, alpha=0.3, axis="y")
+
+    plt.tight_layout()
+
+    plot_filename = "model-comparison-last-epoch-only.png"
+    plot_path = output_dir / plot_filename
+    plt.savefig(plot_path, dpi=300, bbox_inches="tight")
+    logging.info(f"Saved comparison plot: {plot_path}")
+
+    plt.show()
+    plt.close()
+
+
 @app.command(no_args_is_help=True)
 @measure_time
 def visualization(
@@ -291,6 +363,9 @@ def visualization(
     elif plot_type is PlotType.BAR:
         logging.stage("Creating bar plots (last epoch comparison)...")
         create_metric_barplots(combined_data, METRICS_TO_SHOW, output_dir)
+    elif plot_type is PlotType.COMPARISON:
+        logging.stage("Creating comparison plot (all metrics across experiments)...")
+        create_metric_comparison_plot(combined_data, METRICS_TO_SHOW, output_dir)
 
     logging.stage(f"Visualization results saved to {output_dir}")
 
