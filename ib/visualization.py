@@ -82,7 +82,7 @@ def parse_results_from_directory(
 
 def create_metric_plots(
     data: pd.DataFrame,
-    metrics_to_show: list[str],
+    metrics_to_show: dict[str, str],
     output_dir: Path,
 ) -> None:
     """Create separate line plots for each metric showing metric vs epoch."""
@@ -90,12 +90,12 @@ def create_metric_plots(
     sns.set_style("whitegrid")
     plt.rcParams["figure.figsize"] = (10, 6)
 
-    for metric in metrics_to_show:
-        # Filter data for current metric
-        metric_data = data[data["metric_name"] == metric].copy()
+    for readable_name, metric_name in metrics_to_show.items():
+        # Filter data for current metric using the actual metric name
+        metric_data = data[data["metric_name"] == metric_name].copy()
 
         if metric_data.empty:
-            logging.warning(f"No data found for metric: {metric}")
+            logging.warning(f"No data found for metric: {metric_name}")
             continue
 
         # Create the plot
@@ -114,20 +114,20 @@ def create_metric_plots(
 
         # Customize the plot
         plt.title(
-            f'{metric.replace("_", " ").replace("/", " / ").title()} vs Epoch',
+            f"{readable_name} vs Epoch",
             fontsize=16,
             fontweight="bold",
         )
         plt.xlabel("Epoch", fontsize=14)
-        plt.ylabel(metric.replace("_", " ").replace("/", " / ").title(), fontsize=14)
+        plt.ylabel(readable_name, fontsize=14)
         plt.legend(title="Experiment", bbox_to_anchor=(1.05, 1), loc="upper left")
         plt.grid(True, alpha=0.3)
 
         # Improve layout
         plt.tight_layout()
 
-        # Save the plot
-        plot_filename = f"{metric.replace('/', '_').replace('_', '-')}-vs-epoch.png"
+        # Save the plot using a safe filename based on the human-readable name
+        plot_filename = f"{readable_name.replace('/', '_').replace(',', '').replace(' ', '-').lower()}-vs-epoch.png"
         plot_path = output_dir / plot_filename
         plt.savefig(plot_path, dpi=300, bbox_inches="tight")
         logging.info(f"Saved plot: {plot_path}")
@@ -139,7 +139,7 @@ def create_metric_plots(
 
 def create_metric_barplots(
     data: pd.DataFrame,
-    metrics_to_show: list[str],
+    metrics_to_show: dict[str, str],
     output_dir: Path,
 ) -> None:
     """Create separate bar plots for each metric showing last epoch results."""
@@ -161,12 +161,12 @@ def create_metric_barplots(
 
     last_epoch_df = pd.concat(last_epoch_data, ignore_index=True)
 
-    for metric in metrics_to_show:
-        # Filter data for current metric
-        metric_data = last_epoch_df[last_epoch_df["metric_name"] == metric].copy()
+    for readable_name, metric_name in metrics_to_show.items():
+        # Filter data for current metric using the actual metric name
+        metric_data = last_epoch_df[last_epoch_df["metric_name"] == metric_name].copy()
 
         if metric_data.empty:
-            logging.warning(f"No data found for metric: {metric}")
+            logging.warning(f"No data found for metric: {metric_name}")
             continue
 
         # Create the plot
@@ -184,12 +184,12 @@ def create_metric_barplots(
 
         # Customize the plot
         plt.title(
-            f'{metric.replace("_", " ").replace("/", " / ").title()} - Last Epoch Results',
+            f"{readable_name} - Last Epoch Results",
             fontsize=16,
             fontweight="bold",
         )
         plt.xlabel("Experiment", fontsize=14)
-        plt.ylabel(metric.replace("_", " ").replace("/", " / ").title(), fontsize=14)
+        plt.ylabel(readable_name, fontsize=14)
         plt.xticks(rotation=45, ha="right")
         plt.grid(True, alpha=0.3, axis="y")
 
@@ -201,10 +201,8 @@ def create_metric_barplots(
         # Improve layout
         plt.tight_layout()
 
-        # Save the plot
-        plot_filename = (
-            f"{metric.replace('/', '_').replace('_', '-')}-last-epoch-bar.png"
-        )
+        # Save the plot using a safe filename based on the human-readable name
+        plot_filename = f"{readable_name.replace('/', '_').replace(',', '').replace(' ', '-').lower()}-last-epoch-bar.png"
         plot_path = output_dir / plot_filename
         plt.savefig(plot_path, dpi=300, bbox_inches="tight")
         logging.info(f"Saved plot: {plot_path}")
@@ -225,15 +223,20 @@ def visualization(
 
     logging.stage("Running visualization.")
 
-    METRICS_TO_SHOW = [
-        "metrics_main/lpips",
-        # "metrics_main/completeness_high_freq_0002",
-        "metrics_main/completeness_high_freq_0003",
-        # "metrics_main/completeness_low_freq_0002",
-        "metrics_main/completeness_low_freq_0003",
-        "curvature_mean",
-        "curvature_median",
-    ]
+    METRICS_TO_SHOW = {
+        "Chamfer, High Freq, P2T": "metrics/chamfer_high_freq_p2t",
+        "Chamfer, High Freq, T2P": "metrics_main/chamfer_high_freq_t2p",
+        "Chamfer, Low Freq, P2T": "metrics/chamfer_low_freq_p2t",
+        "Chamfer, Low Freq, T2P": "metrics_main/chamfer_low_freq_t2p",
+        "Chamfer, T2P": "metrics_main/chamfer_t2p",
+        "Chamfer, P2T": "metrics/chamfer_p2t",
+        "LPIPS, Low Freq": "metrics_main/lpips_low",
+        "LPIPS, High Freq": "metrics_main/lpips_high",
+        "Completeness, High Freq, 0003": "metrics_main/completeness_high_freq_0003",
+        "Completeness, Low Freq, 0003": "metrics_main/completeness_low_freq_0003",
+        "Curvature, Mean": "curvature_mean",
+        "Curvature, Median": "curvature_median",
+    }
     EXPERIMENTS = [
         "25-05-12_siren_newdata_o5",
         "25-05-13_siren_newdata_o15",
