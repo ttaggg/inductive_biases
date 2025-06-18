@@ -176,20 +176,36 @@ class NormalCosineSimilarity:
             "metrics_main/closest_sims_t2p": float(closest_sims_t2p.mean()),
         }
 
+        _, idx_pred = self.tree.query(pred_vertices, workers=-1)
+
         label_indices = np.unique(self.labels)
         for label_inx in label_indices:
             label_name = INX_TO_LABEL.get(label_inx, "unknown")
+            # T2P
             mask_label = self.labels == label_inx
+            label_dist_t2p_mean = combined_sims_t2p[mask_label].mean()
             results[f"metrics_labels/normalsclosest_{label_name}_t2p"] = float(
                 closest_sims_t2p[mask_label].mean()
             )
             results[f"metrics_labels/normals_{label_name}_t2p"] = float(
-                combined_sims_t2p[mask_label].mean()
+                label_dist_t2p_mean
+            )
+            # P2T
+            mask_pred = self.labels[idx_pred] == label_inx
+            label_dist_p2t_mean = combined_sims_p2t[mask_pred].mean()
+            results[f"metrics_labels/normals_closest_{label_name}_p2t"] = float(
+                closest_sims_p2t[mask_pred].mean()
+            )
+            results[f"metrics_labels/normals_{label_name}_p2t"] = float(
+                label_dist_p2t_mean
+            )
+            # Mean.
+            results[f"metrics_labels/normals_{label_name}"] = float(
+                (label_dist_t2p_mean + label_dist_p2t_mean) / 2.0
             )
 
         if self.labels is not None:
             mask_self = self.labels > 0
-            _, idx_pred = self.tree.query(pred_vertices, workers=-1)
             mask_pred = self.labels[idx_pred] > 0
 
             # Low-resolution regions.
@@ -200,6 +216,9 @@ class NormalCosineSimilarity:
             closest_t2p_low_freq = closest_sims_t2p[mask_self].mean()
             results["metrics_main/normals_closest_low_freq_t2p"] = float(
                 closest_t2p_low_freq
+            )
+            results["metrics_main/normals_low_freq"] = float(
+                (low_freq_t2p + low_freq_p2t) / 2.0
             )
 
             # Other regions.
@@ -213,6 +232,9 @@ class NormalCosineSimilarity:
             closest_t2p_high_freq = closest_sims_t2p[mask_self_hf].mean()
             results["metrics_main/normals_closest_high_freq_t2p"] = float(
                 closest_t2p_high_freq
+            )
+            results["metrics_main/normals_high_freq"] = float(
+                (high_freq_t2p + high_freq_p2t) / 2.0
             )
 
             # Label-dependent visualizations
