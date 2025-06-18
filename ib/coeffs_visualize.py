@@ -72,9 +72,13 @@ def coeff_to_vertex_color(
     indices: np.ndarray,
     coeffs: np.ndarray,
     divisor: float = 2.0,
+    minmax: bool = False,
 ) -> np.ndarray:
     vertex_coeffs = coeffs[indices]
     vertex_coeffs = vertex_coeffs / divisor
+    if minmax:
+        vertex_coeffs = vertex_coeffs - vertex_coeffs.min(axis=0, keepdims=True)
+        vertex_coeffs = vertex_coeffs / vertex_coeffs.max(axis=0, keepdims=True)
     rgba = plt.cm.jet(vertex_coeffs)
     colors = rgba[:, :3]
     return colors
@@ -86,6 +90,7 @@ def plot_for_coeff(
     faces: np.ndarray,
     indices: np.ndarray,
     output_dir: Path,
+    minmax: bool,
     i: int,
     lit: str,
 ):
@@ -95,7 +100,7 @@ def plot_for_coeff(
     mesh.triangles = o3d.utility.Vector3iVector(faces.astype(np.int32))
 
     # Color vertices based on beta values
-    colors = coeff_to_vertex_color(indices, coeff)
+    colors = coeff_to_vertex_color(indices, coeff, minmax=minmax)
     mesh.vertex_colors = o3d.utility.Vector3dVector(colors.astype(np.float32))
     mesh.compute_triangle_normals()
     mesh.compute_vertex_normals()
@@ -114,11 +119,12 @@ def plot_for_coeff(
 
 @app.command(no_args_is_help=True)
 @measure_time
-def visualize_coeffs(
+def coeffs_visualize(
     model_path: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
     output_dir: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
     mesh_resolution: int = 1024,
     grid_resolution: int = 512,
+    minmax: bool = False,
     batch_size: int = 100000,
     device: str = "cuda",
 ) -> None:
@@ -147,10 +153,10 @@ def visualize_coeffs(
     _, indices = tree.query(verts, k=1, workers=-1)
 
     for i, coeff in enumerate(coefficients_a):
-        plot_for_coeff(coeff, verts, faces, indices, output_dir, i, "a")
+        plot_for_coeff(coeff, verts, faces, indices, output_dir, minmax, i, "a")
 
     for i, coeff in enumerate(coefficients_b):
-        plot_for_coeff(coeff, verts, faces, indices, output_dir, i, "b")
+        plot_for_coeff(coeff, verts, faces, indices, output_dir, minmax, i, "b")
 
 
 if __name__ == "__main__":
