@@ -1,6 +1,7 @@
 """The Learned Perceptual Image Patch Similarity."""
 
 import json
+import re
 import warnings
 from pathlib import Path
 
@@ -16,6 +17,12 @@ from ib.utils.logging_module import logging
 # This is about self.load_state_dict(torch.load(model_path,
 # map_location="cpu"), strict=False) being dangerous.
 warnings.filterwarnings("ignore", category=FutureWarning, module="torchmetrics")
+
+
+def _load_json(cam_params_path: Path) -> dict:
+    with open(cam_params_path, "r") as f:
+        cam_params = json.load(f)
+    return cam_params
 
 
 def _parse_cam_params(cam_params: dict) -> tuple[np.ndarray, np.ndarray, int, int]:
@@ -39,13 +46,11 @@ class LpipsMetric:
     def __init__(
         self,
         mesh: o3d.geometry.TriangleMesh,
-        cam_params_low: dict,
-        cam_params_high: dict,
+        cam_params: list[tuple[str, dict]],
     ):
         self.mesh = mesh
         color_mesh_to_normal_direction(self.mesh)
-        self.cam_params_low = cam_params_low
-        self.cam_params_high = cam_params_high
+        self.all_cam_params: list[tuple[str, dict]] = cam_params
         self.lpips = LearnedPerceptualImagePatchSimilarity(
             net_type="vgg", normalize=True
         )
@@ -53,26 +58,29 @@ class LpipsMetric:
     @classmethod
     def from_mesh_dir(cls, base_dir: Path):
         mesh_path = base_dir / "pc_aligned_recon_mesh_0005.ply"
-        cam_params_path_low = base_dir / "camera_params_low.json"
-        cam_params_path_high = base_dir / "camera_params_high.json"
+        cam_params_dir = base_dir / "camera_params"
+
+        # Find all camera_params_*.json files
+        cam_param_files = list(cam_params_dir.glob("camera_params_*.json"))
+        pattern = re.compile(r"camera_params_(.+)\.json")
+
+        cam_params = []
+        for cam_file in cam_param_files:
+            match = pattern.match(cam_file.name)
+            if match:
+                mode = match.group(1)
+                cam_params_dict = _load_json(cam_file)
+                cam_params.append((mode, cam_params_dict))
 
         if not mesh_path.exists():
             raise FileNotFoundError(f"Mesh file not found: {mesh_path}")
-        if not cam_params_path_low.exists():
+        if not cam_params_dir.exists() or len(cam_params) == 0:
             raise FileNotFoundError(
-                f"Camera parameters file not found: {cam_params_path_low}"
-            )
-        if not cam_params_path_high.exists():
-            raise FileNotFoundError(
-                f"Camera parameters file not found: {cam_params_path_high}"
+                f"Camera parameters files not found in: {cam_params_dir}. "
             )
 
         mesh = o3d.io.read_triangle_mesh(str(mesh_path))
-        with open(cam_params_path_low, "r") as f:
-            cam_params_low = json.load(f)
-        with open(cam_params_path_high, "r") as f:
-            cam_params_high = json.load(f)
-        return cls(mesh, cam_params_low, cam_params_high)
+        return cls(mesh, cam_params)
 
     def extract_image_from_mesh(
         self,
@@ -90,10 +98,7 @@ class LpipsMetric:
         # Add the mesh to the scene with a basic material
         material = rendering.MaterialRecord()
         material.shader = "defaultUnlit"
-
         render.scene.add_geometry("mesh", mesh, material)
-        render.scene.scene.set_sun_light([0.707, 0.0, -0.707], [1.0, 1.0, 1.0], 75000)
-        render.scene.scene.enable_sun_light(True)
 
         # Extract camera position from the model matrix
         camera_position = extrinsic[:3, 3]
@@ -127,10 +132,8 @@ class LpipsMetric:
         color_mesh_to_normal_direction(other_mesh)
 
         results = {}
-        for mode, cam_params in (
-            ("low", self.cam_params_low),
-            ("high", self.cam_params_high),
-        ):
+        aggregate_lpips = []
+        for mode, cam_params in self.all_cam_params:
             intrinsic, extrinsic, width, height = _parse_cam_params(cam_params)
             gt_image = self.extract_image_from_mesh(
                 self.mesh,
@@ -150,5 +153,10 @@ class LpipsMetric:
             )
             lpips_score = self.lpips(pred_image, gt_image)
             results[f"metrics_main/lpips_{mode}"] = float(lpips_score.item())
+            if mode not in {"low", "high"}:
+                aggregate_lpips.append(float(lpips_score.item()))
+
+        if len(aggregate_lpips) > 0:
+            results[f"metrics_main/lpips"] = float(np.mean(aggregate_lpips))
 
         return results

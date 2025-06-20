@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 from typing import Annotated
 
-import numpy as np
 import typer
 import open3d as o3d
 import open3d.visualization.rendering as rendering
