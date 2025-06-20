@@ -18,6 +18,8 @@ LABELS = {
     "electrical box": 6,
     "door": 7,
     "door frame": 8,
+    "electrical cabinet": 9,
+    "standing poster": 10,
     ##
     "lamp": -6,
     "chair": -5,
