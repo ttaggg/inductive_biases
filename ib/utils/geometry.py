@@ -71,3 +71,26 @@ def orient_mesh(
         mesh.triangles = o3d.utility.Vector3iVector(tris_flipped)
         mesh.compute_triangle_normals()
         mesh.compute_vertex_normals()
+
+
+def color_mesh_to_normal_direction(mesh: o3d.geometry.TriangleMesh) -> None:
+
+    # Check if vertex normals exist and are valid
+    if len(mesh.vertex_normals) == 0 or len(mesh.vertex_normals) != len(mesh.vertices):
+        mesh.compute_vertex_normals()
+
+    # Set the normals to unit length
+    normals = np.array(mesh.vertex_normals)
+    norms = np.linalg.norm(normals, axis=1)
+    if np.any(norms == 0) or np.any(np.isnan(norms)):
+        mesh.compute_vertex_normals()
+        normals = np.array(mesh.vertex_normals)
+        norms = np.linalg.norm(normals, axis=1)
+
+    normals = normals / norms[:, None]
+    mesh.vertex_normals = o3d.utility.Vector3dVector(normals)
+
+    # Set the color
+    normals = np.array(mesh.vertex_normals)
+    normal_colors = (normals + 1.0) / 2.0
+    mesh.vertex_colors = o3d.utility.Vector3dVector(normal_colors)

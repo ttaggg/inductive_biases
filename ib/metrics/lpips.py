@@ -10,34 +10,12 @@ import open3d.visualization.rendering as rendering
 import torch
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
+from ib.utils.geometry import color_mesh_to_normal_direction
 from ib.utils.logging_module import logging
 
 # This is about self.load_state_dict(torch.load(model_path,
 # map_location="cpu"), strict=False) being dangerous.
 warnings.filterwarnings("ignore", category=FutureWarning, module="torchmetrics")
-
-
-def _set_unit_normals(mesh: o3d.geometry.TriangleMesh) -> None:
-    # Check if vertex normals exist and are valid
-    if len(mesh.vertex_normals) == 0 or len(mesh.vertex_normals) != len(mesh.vertices):
-        mesh.compute_vertex_normals()
-
-    normals = np.array(mesh.vertex_normals)
-
-    norms = np.linalg.norm(normals, axis=1)
-    if np.any(norms == 0) or np.any(np.isnan(norms)):
-        mesh.compute_vertex_normals()
-        normals = np.array(mesh.vertex_normals)
-        norms = np.linalg.norm(normals, axis=1)
-
-    normals = normals / norms[:, None]
-    mesh.vertex_normals = o3d.utility.Vector3dVector(normals)
-
-
-def _set_vertex_colors(mesh: o3d.geometry.TriangleMesh) -> None:
-    normals = np.array(mesh.vertex_normals)
-    normal_colors = (normals + 1.0) / 2.0
-    mesh.vertex_colors = o3d.utility.Vector3dVector(normal_colors)
 
 
 def _parse_cam_params(cam_params: dict) -> tuple[np.ndarray, np.ndarray, int, int]:
@@ -65,16 +43,12 @@ class LpipsMetric:
         cam_params_high: dict,
     ):
         self.mesh = mesh
-        self.prepare_mesh(self.mesh)
+        color_mesh_to_normal_direction(self.mesh)
         self.cam_params_low = cam_params_low
         self.cam_params_high = cam_params_high
         self.lpips = LearnedPerceptualImagePatchSimilarity(
             net_type="vgg", normalize=True
         )
-
-    def prepare_mesh(self, mesh: o3d.geometry.TriangleMesh) -> None:
-        _set_unit_normals(mesh)
-        _set_vertex_colors(mesh)
 
     @classmethod
     def from_mesh_dir(cls, base_dir: Path):
@@ -150,7 +124,7 @@ class LpipsMetric:
     def __call__(
         self, other_mesh: o3d.geometry.TriangleMesh, save_path: Path
     ) -> dict[str, float]:
-        self.prepare_mesh(other_mesh)
+        color_mesh_to_normal_direction(other_mesh)
 
         results = {}
         for mode, cam_params in (

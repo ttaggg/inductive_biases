@@ -30,6 +30,7 @@ dependencies = [
 package = true
 
 [project.scripts]
+capture_camera_params = "ib.capture_camera_params:app"
 decoding = "ib.decoding:app"
 evaluate_mesh = "ib.evaluate_mesh:app"
 evaluate_model = "ib.evaluate_model:app"
