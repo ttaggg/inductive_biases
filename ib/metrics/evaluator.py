@@ -195,8 +195,6 @@ class Evaluator:
                 self.metrics[Metric.normals](
                     pred_verts,
                     pred_normals,
-                    save_path=save_mesh_dir
-                    / f"normals_similarity_epoch_{current_epoch}_res_{resolution}",
                 )
             )
 

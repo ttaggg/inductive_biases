@@ -22,7 +22,6 @@ def evaluate_model(
         [
             Metric.chamfer,
             Metric.normals,
-            Metric.curve,
             Metric.lpips,
             Metric.complete,
         ]
