@@ -26,6 +26,7 @@ def get_exp_name_from_full_name(full_experiment_name: str) -> str:
 def parse_results_from_directory(
     results_dir: Path,
     experiment_name: str,
+    resolution: int,
 ) -> pd.DataFrame:
     """Parse results from a directory containing JSON files."""
 
@@ -37,7 +38,7 @@ def parse_results_from_directory(
 
     # Find all JSON files matching the pattern
     json_files = list(
-        results_dir.glob(f"results_{experiment_name}_epoch_*_res_1024.json")
+        results_dir.glob(f"results_{experiment_name}_epoch_*_res_{resolution}.json")
     )
 
     if not json_files:
@@ -286,6 +287,7 @@ def create_metric_comparison_plot(
 @measure_time
 def visualization(
     output_dir: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
+    resolution: int = 1024,
 ) -> None:
     """Visualize results."""
     # TODO(oleg): add normal input arguments instead of hardcoded values.
@@ -398,7 +400,7 @@ def visualization(
             f"Processing experiment: {readable_name} ({experiment_full_name}) -> {experiment_name}"
         )
 
-        df = parse_results_from_directory(results_dir, experiment_name)
+        df = parse_results_from_directory(results_dir, experiment_name, resolution)
         if not df.empty:
             # Replace the experiment name with the readable name
             df["experiment"] = readable_name
