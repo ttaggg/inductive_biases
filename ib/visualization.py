@@ -1,6 +1,7 @@
 """Visualize results."""
 
 import json
+from enum import Enum
 from pathlib import Path
 from typing import Annotated
 
@@ -13,6 +14,12 @@ from ib.utils.logging_module import logging
 from ib.utils.pipeline import measure_time, resolve_and_expand_path
 
 app = typer.Typer(add_completion=False)
+
+
+class Scene(str, Enum):
+    ROOM_1 = "1"  # 8b5caf3398
+    ROOM_2 = "2"  # 5fb5d2dbf2
+    # ROOM_3 = "3" # 5fb5d2dbf2
 
 
 def get_exp_name_from_full_name(full_experiment_name: str) -> str:
@@ -134,83 +141,6 @@ def create_metric_plots(
         plt.close()
 
 
-def create_metric_barplots(
-    data: pd.DataFrame,
-    metrics_to_show: dict[str, str],
-    output_dir: Path,
-) -> None:
-    """Create separate bar plots for each metric showing last epoch results."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Set up seaborn style
-    sns.set_style("whitegrid")
-    plt.rcParams["figure.figsize"] = (10, 6)
-
-    # Get last epoch data for each experiment
-    last_epoch_data = []
-    for experiment in data["experiment"].unique():
-        exp_data = data[data["experiment"] == experiment]
-        last_epoch = exp_data["epoch"].max()
-        last_epoch_exp_data = exp_data[exp_data["epoch"] == last_epoch]
-        last_epoch_data.append(last_epoch_exp_data)
-
-    if not last_epoch_data:
-        logging.warning("No last epoch data found")
-        return
-
-    last_epoch_df = pd.concat(last_epoch_data, ignore_index=True)
-
-    for readable_name, metric_name in metrics_to_show.items():
-        # Filter data for current metric using the actual metric name
-        metric_data = last_epoch_df[last_epoch_df["metric_name"] == metric_name].copy()
-
-        if metric_data.empty:
-            logging.warning(f"No data found for metric: {metric_name}")
-            continue
-
-        # Create the plot
-        plt.figure(figsize=(12, 8))
-
-        # Create bar plot
-        sns.barplot(
-            data=metric_data,
-            x="experiment",
-            y="metric_value",
-            hue="experiment",
-            palette="viridis",
-            legend=False,
-        )
-
-        # Customize the plot
-        plt.title(
-            f"{readable_name} - Last Epoch Results",
-            fontsize=16,
-            fontweight="bold",
-        )
-        plt.xlabel("Experiment", fontsize=14)
-        plt.ylabel(readable_name, fontsize=14)
-        plt.xticks(rotation=45, ha="right")
-        plt.grid(True, alpha=0.3, axis="y")
-
-        # Add value labels on bars
-        ax = plt.gca()
-        for container in ax.containers:
-            ax.bar_label(container, fmt="%.4f", fontsize=10)
-
-        # Improve layout
-        plt.tight_layout()
-
-        # Save the plot using a safe filename based on the human-readable name
-        plot_filename = f"{readable_name.replace('/', '_').replace(',', '').replace(' ', '-').lower()}-last-epoch-bar.png"
-        plot_path = output_dir / plot_filename
-        plt.savefig(plot_path, dpi=300, bbox_inches="tight")
-        logging.info(f"Saved plot: {plot_path}")
-
-        # Show the plot
-        plt.show()
-        plt.close()
-
-
 def create_metric_comparison_plot(
     data: pd.DataFrame,
     metrics_to_show: dict[str, str],
@@ -287,6 +217,9 @@ def create_metric_comparison_plot(
 @measure_time
 def visualization(
     output_dir: Annotated[Path, typer.Option(callback=resolve_and_expand_path)],
+    scene: Annotated[
+        Scene, typer.Option(help="Scene to visualize (1: Room 1, 2: Room 2)")
+    ],
     resolution: int = 1024,
 ) -> None:
     """Visualize results."""
@@ -294,50 +227,51 @@ def visualization(
 
     logging.stage("Running visualization.")
 
-    # ROOM 1
-    # METRICS_TO_SHOW_CLASSES = {
-    #     # T2P
-    #     "Chair": "metrics_labels/chamfer_chair_t2p",
-    #     "Heater": "metrics_labels/chamfer_heater_t2p",
-    #     "Lamp": "metrics_labels/chamfer_lamp_t2p",
-    #     "Laptop stand": "metrics_labels/chamfer_laptop stand_t2p",
-    #     "Socket": "metrics_labels/chamfer_socket_t2p",
-    #     "Wall": "metrics_labels/chamfer_wall_t2p",
-    #     "Window": "metrics_labels/chamfer_window_t2p",
-    #     # General
-    #     "Chair": "metrics_labels/chamfer_chair",
-    #     "Heater": "metrics_labels/chamfer_heater",
-    #     "Lamp": "metrics_labels/chamfer_lamp",
-    #     "Laptop stand": "metrics_labels/chamfer_laptop stand",
-    #     "Socket": "metrics_labels/chamfer_socket",
-    #     "Wall": "metrics_labels/chamfer_wall",
-    #     "Window": "metrics_labels/chamfer_window",
-    # }
-    # ROOM 2
-    METRICS_TO_SHOW_CLASSES = {
-        # T2P
-        "Compressor": "metrics_labels/chamfer_compressor_t2p",
-        "Door": "metrics_labels/chamfer_door_t2p",
-        "Door frame": "metrics_labels/chamfer_door frame_t2p",
-        "Electrical box": "metrics_labels/chamfer_electrical box_t2p",
-        "Floor": "metrics_labels/chamfer_floor_t2p",
-        "Machine": "metrics_labels/chamfer_machine_t2p",
-        "Power socket unit": "metrics_labels/chamfer_power socket unit_t2p",
-        "Stairs": "metrics_labels/chamfer_stairs_t2p",
-        "Window frame": "metrics_labels/chamfer_window frame_t2p",
-        # General
-        # "Compressor": "metrics_labels/chamfer_compressor",
-        # "Door": "metrics_labels/chamfer_door",
-        # "Door frame": "metrics_labels/chamfer_door frame",
-        # "Electrical box": "metrics_labels/chamfer_electrical box",
-        # "Floor": "metrics_labels/chamfer_floor",
-        # "Machine": "metrics_labels/chamfer_machine",
-        # "Power socket unit": "metrics_labels/chamfer_power socket unit",
-        # "Stairs": "metrics_labels/chamfer_stairs",
-        # "Window frame": "metrics_labels/chamfer_window frame",
-    }
+    if scene is Scene.ROOM_1:
+        METRICS_TO_SHOW_CLASSES_T2P = {
+            "Chair": "metrics_labels/chamfer_chair_t2p",
+            "Heater": "metrics_labels/chamfer_heater_t2p",
+            "Lamp": "metrics_labels/chamfer_lamp_t2p",
+            "Laptop stand": "metrics_labels/chamfer_laptop stand_t2p",
+            "Socket": "metrics_labels/chamfer_socket_t2p",
+            "Wall": "metrics_labels/chamfer_wall_t2p",
+            "Window": "metrics_labels/chamfer_window_t2p",
+        }
+        METRICS_TO_SHOW_CLASSES_GENERAL = {
+            "Chair": "metrics_labels/chamfer_chair",
+            "Heater": "metrics_labels/chamfer_heater",
+            "Lamp": "metrics_labels/chamfer_lamp",
+            "Laptop stand": "metrics_labels/chamfer_laptop stand",
+            "Socket": "metrics_labels/chamfer_socket",
+            "Wall": "metrics_labels/chamfer_wall",
+            "Window": "metrics_labels/chamfer_window",
+        }
 
-    METRICS_TO_SHOW_GENERAL = {
+    if scene is Scene.ROOM_2:
+        METRICS_TO_SHOW_CLASSES_T2P = {
+            "Compressor": "metrics_labels/chamfer_compressor_t2p",
+            "Door": "metrics_labels/chamfer_door_t2p",
+            "Door frame": "metrics_labels/chamfer_door frame_t2p",
+            "Electrical box": "metrics_labels/chamfer_electrical box_t2p",
+            "Floor": "metrics_labels/chamfer_floor_t2p",
+            "Machine": "metrics_labels/chamfer_machine_t2p",
+            "Power socket unit": "metrics_labels/chamfer_power socket unit_t2p",
+            "Stairs": "metrics_labels/chamfer_stairs_t2p",
+            "Window frame": "metrics_labels/chamfer_window frame_t2p",
+        }
+        METRICS_TO_SHOW_CLASSES_GENERAL = {
+            "Compressor": "metrics_labels/chamfer_compressor",
+            "Door": "metrics_labels/chamfer_door",
+            "Door frame": "metrics_labels/chamfer_door frame",
+            "Electrical box": "metrics_labels/chamfer_electrical box",
+            "Floor": "metrics_labels/chamfer_floor",
+            "Machine": "metrics_labels/chamfer_machine",
+            "Power socket unit": "metrics_labels/chamfer_power socket unit",
+            "Stairs": "metrics_labels/chamfer_stairs",
+            "Window frame": "metrics_labels/chamfer_window frame",
+        }
+
+    METRICS_TO_SHOW_COMMON = {
         "Chamfer, High Freq": "metrics/chamfer_high_freq",
         "Chamfer, High Freq, P2T": "metrics/chamfer_high_freq_p2t",
         "Chamfer, High Freq, T2P": "metrics_main/chamfer_high_freq_t2p",
@@ -348,26 +282,21 @@ def visualization(
         "Chamfer, P2T": "metrics/chamfer_p2t",
         "LPIPS, Low Freq": "metrics_main/lpips_low",
         "LPIPS, High Freq": "metrics_main/lpips_high",
+        "LPIPS 0": "metrics_main/lpips_0",
+        "LPIPS 1": "metrics_main/lpips_1",
+        "LPIPS 2": "metrics_main/lpips_2",
+        "LPIPS 3": "metrics_main/lpips_3",
+        "LPIPS 4": "metrics_main/lpips_4",
+        "LPIPS": "metrics_main/lpips",
         "Completeness, High Freq, 0002": "metrics_main/completeness_high_freq_0002",
         "Completeness, High Freq, 0003": "metrics_main/completeness_high_freq_0003",
         "Completeness, Low Freq, 0002": "metrics_main/completeness_low_freq_0002",
         "Completeness, Low Freq, 0003": "metrics_main/completeness_low_freq_0003",
     }
+
     EXPERIMENTS = {
-        # ROOM 2
-        "SIREN o30": "25-06-15_siren_o30_linter200_room2",
-        # "SIREN-Mod A": "25-06-15_dsiren_linter200_room2",
-        "FINER": "25-06-15_finer_linter200_room2",
-        # "FINER again": "25-06-16_finer_linter200_room2_again",
-        # "SIREN omega up": "25-06-18_siren_omega_up",
-        # "SIREN omega down": "25-06-18_siren_omega_down",
-        # "SIREN o30 skips": "25-06-18_siren_skips_room2",
-        # "SIREN-Mod AB sigm3": "25-06-16_dsiren_mlp_ab_sigm3_linter200_room2",
-        "SIREN-Mod AB": "25-06-15_dsiren_mlp_ab_linter200_room2",
-        # ROOM 1
-        # "SIREN o30": "25-06-19_siren_o30_small_room1",
-        # "FINER": "25-06-19_finer_small_room1",
-        # "SIREN-Mod": "25-06-20_dsiren_ab_small_room1",
+        ##### ROOM 1
+        ### Large
         # "SIREN HL 1": "25-06-14_siren_o30_linter200_hl1",
         # "SIREN HL 5": "25-06-07_siren_o30_hl_5",
         # "SIREN WL 512": "25-06-14_siren_o30_linter200_wl512",
@@ -385,7 +314,41 @@ def visualization(
         # "SIREN-Mod-old": "25-06-01_double_siren_pe_mlp",
         # "ReLU PE": "25-05-21_relu_pe_init_linter100",
         # "STAFF": "25-05-31_staf_init",
-        # "Attn FF": "25-05-26_attn_ff_linter100_o20",
+        # "Attn FF": "25-05-26_attn_ff_linter100_o20",\
+        ### Small
+        # "SIREN o30": "25-06-19_siren_o30_small_room1",
+        # "FINER": "25-06-19_finer_small_room1",
+        # "SIREN-Mod AB": "25-06-20_dsiren_ab_small_room1",
+        # "SIREN-Mod AB o10": "25-06-24_dsiren_small_room1_pretr256_o10",
+        # "SIREN-Mod repeat": "25-06-24_dsiren_small_room1_pretr256_o10_l400",
+        ### Medium
+        # "SIREN-o30-med long": "25-06-22_siren_o30_medium_room1",
+        # "FINER-med long": "25-06-22_finer_medium_room1",
+        # "SIREN-Mod-pretrained-med": "25-06-22_dsiren_medium_room1_pretr256",
+        # "SIREN-Mod-pretrained-med-long": "25-06-23_dsiren_medium_room1_pretr256_long",
+        # Misc
+        # "SIREN-o30-med": "25-06-20_siren_o30_medium_room1",
+        # "FINER-med": "25-06-20_finer_medium_room1",
+        ##### ROOM 2
+        ### Small
+        # "SIREN o30": "25-06-15_siren_o30_linter200_room2",
+        # "SIREN-Mod A": "25-06-15_dsiren_linter200_room2",
+        # "FINER": "25-06-15_finer_linter200_room2",
+        # "SIREN omega up": "25-06-18_siren_omega_up",
+        # "SIREN omega down": "25-06-18_siren_omega_down",
+        # "SIREN o30 skips": "25-06-18_siren_skips_room2",
+        # "SIREN-Mod AB": "25-06-15_dsiren_mlp_ab_linter200_room2",
+        ### Medium
+        "SIREN o30, medium": "25-06-23_siren_o30_medium_room2",
+        "FINER, medium": "25-06-24_finer_medium_room2",
+        # "SIREN-Mod AB": "25-06-15_dsiren_mlp_ab_linter200_room2",
+        "SIREN-Mod AB long": "25-06-25_dsiren_medium_room2_pretr256",
+        #### New archi
+        # "SIREN o30": "25-06-15_siren_o30_linter200_room2",
+        # "SIREN-Mod AB 512": "25-06-15_dsiren_mlp_ab_linter200_room2",
+        # "DSiren Softplus ABC": "25-06-26_dsiren_small_room2_soft_abc",
+        # "DSiren Softplus GELU ABC": "25-06-26_dsiren_small_room2_soft_gelu_abc",
+        # "DSiren Softplus Sin ABC": "25-06-26_dsiren_small_room2_soft_sin_abc",
     }
 
     # Collect all data
@@ -428,22 +391,20 @@ def visualization(
     logging.stage("Creating line plots (metric vs epoch)...")
     create_metric_plots(
         combined_data,
-        METRICS_TO_SHOW_GENERAL,
+        METRICS_TO_SHOW_COMMON,
         output_dir / "lineplots",
-    )
-    logging.stage("Creating bar plots (last epoch comparison)...")
-    create_metric_barplots(
-        combined_data,
-        METRICS_TO_SHOW_GENERAL,
-        output_dir / "barplots",
     )
     logging.stage("Creating comparison plot (all metrics across experiments)...")
     create_metric_comparison_plot(
         combined_data,
-        METRICS_TO_SHOW_CLASSES,
-        output_dir / "comparison",
+        METRICS_TO_SHOW_CLASSES_T2P,
+        output_dir / "comparison_t2p",
     )
-
+    create_metric_comparison_plot(
+        combined_data,
+        METRICS_TO_SHOW_CLASSES_GENERAL,
+        output_dir / "comparison_general",
+    )
     logging.stage(f"Visualization results saved to {output_dir}")
 
 
