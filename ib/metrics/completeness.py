@@ -42,10 +42,17 @@ class Completeness:
         )
         return cls(vertices, labels)
 
-    def _compute_completeness(self, pred_vertices: KDTree, radius: float) -> np.ndarray:
-        pred_tree = KDTree(pred_vertices)
-        neighbor_indices: list[list] = self.tree.query_ball_tree(pred_tree, r=radius)
-        match = np.zeros(len(pred_vertices))
+    def _compute_completeness(
+        self,
+        source_vertices: np.ndarray,
+        source_tree: KDTree,
+        target_tree,
+        radius: float,
+    ) -> np.ndarray:
+        neighbor_indices: list[list] = target_tree.query_ball_tree(
+            source_tree, r=radius
+        )
+        match = np.zeros(len(source_vertices))
         for i, indices in enumerate(neighbor_indices):
             if len(indices) != 0:
                 match[i] = 1.0
@@ -59,10 +66,15 @@ class Completeness:
 
         results = {}
 
+        pred_tree = KDTree(pred_vertices)
+
+        # Completeness
         for radius in radii:
 
             str_radius = str(radius).replace(".", "")
-            matches = self._compute_completeness(pred_vertices, radius)
+            matches = self._compute_completeness(
+                pred_vertices, pred_tree, self.tree, radius
+            )
             results[f"metrics_main/completeness_{str_radius}"] = float(matches.mean())
 
             label_indices = np.unique(self.labels)
@@ -81,6 +93,33 @@ class Completeness:
             mask_label = self.labels > 0
             results[f"metrics_main/completeness_low_freq_{str_radius}"] = float(
                 matches[mask_label].mean()
+            )
+
+        # Artifacts
+        for radius in radii:
+
+            str_radius = str(radius).replace(".", "")
+            matches = self._compute_completeness(
+                self.vertices, self.tree, pred_tree, radius
+            )
+            results[f"metrics_main/artifacts_{str_radius}"] = float(1 - matches.mean())
+
+            label_indices = np.unique(self.labels)
+            for label_inx in label_indices:
+                label_name = INX_TO_LABEL.get(label_inx, "unknown")
+                mask_label = self.labels == label_inx
+                results[f"metrics_labels/artifacts_{label_name}_{str_radius}"] = float(
+                    1 - matches[mask_label].mean()
+                )
+
+            mask_label = self.labels < 0
+            results[f"metrics_main/artifacts_high_freq_{str_radius}"] = float(
+                1 - matches[mask_label].mean()
+            )
+
+            mask_label = self.labels > 0
+            results[f"metrics_main/artifacts_low_freq_{str_radius}"] = float(
+                1 - matches[mask_label].mean()
             )
 
         return results

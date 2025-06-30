@@ -3,6 +3,5 @@ batch_size: ${trainer.batch_size}
 resolution: 1024
 metric_names:
     - chamfer
-    - normals
     - lpips
     - complete
