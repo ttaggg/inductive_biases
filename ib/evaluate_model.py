@@ -21,7 +21,6 @@ def evaluate_model(
     metric: list[Metric] = typer.Option(
         [
             Metric.chamfer,
-            Metric.normals,
             Metric.lpips,
             Metric.complete,
         ]
