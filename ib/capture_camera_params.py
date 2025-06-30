@@ -32,7 +32,11 @@ class CameraParamsSaver:
 
     def save_camera(self, win: o3d.visualization.O3DVisualizer) -> None:
         """Callback that writes the current view to camera_params_{counter}.json"""
-        output_path = self.base_output_dir / f"camera_params_{self.counter}.json"
+        output_path = (
+            self.base_output_dir
+            / "camera_params"
+            / f"camera_params_{self.counter}.json"
+        )
         camera = win.scene.camera
         cam_params = {
             "intrinsic": {
