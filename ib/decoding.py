@@ -25,12 +25,13 @@ def decoding(
     batch_size: int = 256000,
     device: str = "cuda",
     visualize: bool = False,
+    float32_matmul_precision: str = "high",
 ) -> None:
     """Export encoded in the INR shape to mesh."""
 
     logging.stage("Running export to a mesh.")
 
-    decoder = SdfDecoder.from_model_path(model_path, device)
+    decoder = SdfDecoder.from_model_path(model_path, device, float32_matmul_precision)
     decoder.run(resolution, batch_size)
 
     run_name, current_epoch, _ = decode_path(model_path)

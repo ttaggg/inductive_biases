@@ -20,7 +20,13 @@ class SdfDecoder:
         self.model = model
 
     @classmethod
-    def from_model_path(cls, model_path: Path, device: str):
+    def from_model_path(
+        cls,
+        model_path: Path,
+        device: str,
+        float32_matmul_precision: str = "high",
+    ):
+        torch.set_float32_matmul_precision(float32_matmul_precision)
         model = torch.load(model_path, weights_only=False, map_location=device)
         model.eval()
         model.to(device)
