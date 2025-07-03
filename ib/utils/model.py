@@ -21,6 +21,7 @@ def save_model(
     """Save the whole model."""
     model_path = output_dir / f"model_{run_name}_epoch_{epoch}.pt"
     torch.save(model, model_path)
+    logging.info(f"Model was saved to {model_path}")
 
 
 def make_coordinates(
