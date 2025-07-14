@@ -50,7 +50,6 @@ class SdfDecoder:
         self.mesh.triangles = o3d.utility.Vector3iVector(faces.astype(np.int32))
         self.mesh.compute_triangle_normals()
         self.mesh.compute_vertex_normals()
-        orient_mesh(self.mesh)
 
         logging.info(f"Mesh contains {len(verts)} vertices and {len(faces)} faces.")
 
