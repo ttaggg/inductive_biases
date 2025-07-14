@@ -3,5 +3,5 @@
 defaults:
   - dataset: ply_dataset
 
-name: scannet_room_1
+name: scannet_room_2
 file_path: ${oc.env:HOME}/datasets/3d_scenes/scannet_room_2/pc_aligned_filtered_trimmed_both_0005.ply
