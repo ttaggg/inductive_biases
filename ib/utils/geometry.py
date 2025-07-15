@@ -6,7 +6,7 @@ import numpy as np
 import open3d as o3d
 from skimage import measure
 
-from ib.datasets.resamplers import SimpleResampler
+from ib.datasets.resamplers import Resampler
 
 
 def sdf_to_mesh(sdf: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -22,7 +22,7 @@ def mesh_to_pointcloud(
     faces: np.ndarray,
     num_points: int,
 ) -> tuple[np.ndarray, np.ndarray]:
-    resampler = SimpleResampler(verts, faces)
+    resampler = Resampler(verts, faces)
     resampler.run(num_samples=num_points)
     return resampler.sampled_vertices, resampler.sampled_normals
 
