@@ -19,7 +19,6 @@ app = typer.Typer(add_completion=False)
 class Scene(str, Enum):
     ROOM_1 = "1"  # 8b5caf3398
     ROOM_2 = "2"  # 5fb5d2dbf2
-    # ROOM_3 = "3" # 5fb5d2dbf2
 
 
 def get_exp_name_from_full_name(full_experiment_name: str) -> str:
@@ -287,40 +286,54 @@ def visualization(
         "LPIPS 2": "metrics_main/lpips_2",
         "LPIPS 3": "metrics_main/lpips_3",
         "LPIPS 4": "metrics_main/lpips_4",
+        "LPIPS 5": "metrics_main/lpips_5",
+        "LPIPS 6": "metrics_main/lpips_6",
+        "LPIPS 7": "metrics_main/lpips_7",
+        "LPIPS 8": "metrics_main/lpips_8",
         "LPIPS": "metrics_main/lpips",
         "Completeness, High Freq, 0002": "metrics_main/completeness_high_freq_0002",
         "Completeness, High Freq, 0003": "metrics_main/completeness_high_freq_0003",
         "Completeness, Low Freq, 0002": "metrics_main/completeness_low_freq_0002",
-        "Completeness, Low Freq, 0003": "metrics_main/completeness_low_freq_0003",
+        "Completeness, 0003": "metrics_main/completeness_0003",
+        "Completeness, 0002": "metrics_main/completeness_0002",
     }
 
     EXPERIMENTS = {
         ##### ROOM 1
         ### Large
         # "SIREN HL 1": "25-06-14_siren_o30_linter200_hl1",
+        # "SIREN HL 3": "25-05-12_siren_newdata_o30_linter300",
         # "SIREN HL 5": "25-06-07_siren_o30_hl_5",
         # "SIREN WL 512": "25-06-14_siren_o30_linter200_wl512",
         # "SIREN WL 1536": "25-06-09_siren_o30_wl_1536_linter200",
         # "SIREN weight coeff 3": "25-06-13_siren_o30_linter200_wm3",
-        # "SIREN o30": "25-05-12_siren_newdata_o30_linter300",
+        # "SIREN weight coeff 6": "25-05-12_siren_newdata_o30_linter300",
         # "SIREN weight coeff 12": "25-06-12_weightm12_linter200",
         # "SIREN weight coeff 18": "25-06-13_siren_o30_linter200_wm18",
         # "SIREN o5": "25-05-12_siren_newdata_o5",
         # "SIREN o15": "25-05-13_siren_newdata_o15",
+        # "SIREN o30": "25-05-12_siren_newdata_o30_linter300",
         # "SIREN o45": "25-05-14_siren_newdata_o45_linter200",
+        # "SIREN o75": "25-06-12_siren_o75_linter200",
+        # "SIREN o100": "25-06-11_siren_o100_linter200",
         # "FINER": "25-05-29_finer_o20_linter500",
         # "SIREN-Mod": "25-06-17_dsiren_tanh_ab_room1_mod500",
         # "HOSC": "25-06-04_hosc_init",
         # "SIREN-Mod-old": "25-06-01_double_siren_pe_mlp",
         # "ReLU PE": "25-05-21_relu_pe_init_linter100",
-        # "STAFF": "25-05-31_staf_init",
-        # "Attn FF": "25-05-26_attn_ff_linter100_o20",\
+        # "ReLU": "25-06-10_relu_no_pe",
+        # "STAF": "25-05-31_staf_init",
+        # "Attn FF": "25-05-26_attn_ff_linter100_o20",
         ### Small
         # "SIREN o30": "25-06-19_siren_o30_small_room1",
         # "FINER": "25-06-19_finer_small_room1",
         # "SIREN-Mod AB": "25-06-20_dsiren_ab_small_room1",
+        # "SIREN match": "25-07-13_siren_room1_match_repeat",
+        # "FINER match": "25-07-12_finer_room1_match",
+        # "SIREN match": "25-07-13_siren_room1_match",
         # "SIREN-Mod AB o10": "25-06-24_dsiren_small_room1_pretr256_o10",
         # "SIREN-Mod repeat": "25-06-24_dsiren_small_room1_pretr256_o10_l400",
+        # "SIREN-FM": "25-07-13_vainer_room1_relu_abc",
         ### Medium
         # "SIREN-o30-med long": "25-06-22_siren_o30_medium_room1",
         # "FINER-med long": "25-06-22_finer_medium_room1",
@@ -338,17 +351,39 @@ def visualization(
         # "SIREN omega down": "25-06-18_siren_omega_down",
         # "SIREN o30 skips": "25-06-18_siren_skips_room2",
         # "SIREN-Mod AB": "25-06-15_dsiren_mlp_ab_linter200_room2",
+        "SIREN o30 match": "25-07-05_siren_small_matching_300_room2",
+        "FINER match": "25-07-06_finer_small_matching_300_room2",
+        # "DSiren Softplus GELU ABC": "25-07-03_dsiren_small_room2_gelu_abc",
+        # "SIREN Cont": "25-07-10_siren_room2_cont",
+        # "Dsiren Cont": "25-07-10_dsiren_room2_cont",
+        # "Dsiren Cont 2": "25-07-11_dsiren_room2_cont",
+        # "FINER Cont": "25-07-11_finer_room2_cont",
+        "SIREN-FM ReLU": "25-07-12_dsiren_room2_omega10_relu",
         ### Medium
-        "SIREN o30, medium": "25-06-23_siren_o30_medium_room2",
-        "FINER, medium": "25-06-24_finer_medium_room2",
+        # "SIREN o30, medium": "25-06-23_siren_o30_medium_room2",
+        # "FINER, medium": "25-06-24_finer_medium_room2",
         # "SIREN-Mod AB": "25-06-15_dsiren_mlp_ab_linter200_room2",
-        "SIREN-Mod AB long": "25-06-25_dsiren_medium_room2_pretr256",
+        # "SIREN-Mod AB long": "25-06-25_dsiren_medium_room2_pretr256",
+        # "SIREN-Mod ABC GELU 310": "25-07-02_vainer_medium_room2_gelu310_l200",
+        # "SIREN-Mod ABC GELU 512": "25-07-03_dsiren_medium_medium_room2_gelu_abc",
+        # "SIREN-FM": "25-07-15_sirenfm_room2_mediummodel_smallmodulator_o10",
         #### New archi
         # "SIREN o30": "25-06-15_siren_o30_linter200_room2",
         # "SIREN-Mod AB 512": "25-06-15_dsiren_mlp_ab_linter200_room2",
         # "DSiren Softplus ABC": "25-06-26_dsiren_small_room2_soft_abc",
         # "DSiren Softplus GELU ABC": "25-06-26_dsiren_small_room2_soft_gelu_abc",
         # "DSiren Softplus Sin ABC": "25-06-26_dsiren_small_room2_soft_sin_abc",
+        ### Omegas
+        # "SIREN o10": "25-07-09_siren_room2_omega10",
+        # "SIREN o20": "25-07-09_siren_room2_omega20",
+        # "SIREN o30": "25-07-05_siren_small_matching_300_room2",
+        # "Siren-FM o10": "25-07-10_dsiren_room2_omega10",
+        # "Siren-FM o20": "25-07-03_dsiren_small_room2_gelu_abc",
+        # "Siren-FM o30": "25-07-11_vainer_room2_omega30",
+        #### Finetune
+        # "SIREN o30": "25-07-05_siren_small_matching_300_room2",
+        # "SIREN o30 + 500 epochs": "25-07-12_siren_room2_finetune",
+        # "SIREN o30 + 500 epochs with modulator": "25-07-12_siren_room2_finetune_with_mod",
     }
 
     # Collect all data
