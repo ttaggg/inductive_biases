@@ -11,7 +11,6 @@ from torch import nn
 
 from ib.metrics.chamfer_distance import ChamferDistance
 from ib.metrics.completeness import Completeness
-from ib.metrics.local_curvature import CurvatureNormalChangeRate
 from ib.metrics.lpips import LpipsMetric
 from ib.metrics.normal_distance import NormalCosineSimilarity
 from ib.models.decoders import SdfDecoder
@@ -29,7 +28,6 @@ from ib.utils.logging_module import logging
 class Metric(str, Enum):
     chamfer = "chamfer"
     normals = "normals"
-    curve = "curve"
     lpips = "lpips"
     complete = "complete"
 
@@ -45,10 +43,6 @@ def _resolve_metrics(
         )
     if Metric.normals in metric:
         mapping[Metric.normals] = NormalCosineSimilarity.from_pointcloud(
-            gt_data["points"], gt_data["normals"], gt_data["labels"]
-        )
-    if Metric.curve in metric:
-        mapping[Metric.curve] = CurvatureNormalChangeRate.from_pointcloud(
             gt_data["points"], gt_data["normals"], gt_data["labels"]
         )
     if Metric.lpips in metric:
@@ -197,10 +191,6 @@ class Evaluator:
                     pred_normals,
                 )
             )
-
-        if Metric.curve in self.metrics:
-            logging.info(f"Computing Curvature Normal Change Rate.")
-            results.update(self.metrics[Metric.curve](pred_verts, pred_normals))
 
         if Metric.lpips in self.metrics:
             logging.info(f"Computing LPIPS.")
