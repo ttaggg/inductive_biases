@@ -55,9 +55,6 @@ def plot_heatmap(
         vmin=vmin,
         vmax=vmax,
     )
-    # Invert Y-axis so that the first row appears at the top
-    # ax.invert_yaxis()
-
     ax.set_xticks(range(len(rhs)))
     ax.set_xticklabels(rhs)
     ax.set_xlabel(rhs_label)
@@ -65,8 +62,6 @@ def plot_heatmap(
     ax.set_yticklabels(lhs)
     ax.set_ylabel(lhs_label)
     fig.colorbar(cax, ax=ax, label="Complexity")
-
-    # save the figure into the specified directory
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
 

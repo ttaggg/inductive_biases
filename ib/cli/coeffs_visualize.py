@@ -1,4 +1,4 @@
-"""Visualize coeffs coefficients from the SIREN-M."""
+"""Visualize coeffs coefficients from the SIREN-FM."""
 
 import sys
 from pathlib import Path
