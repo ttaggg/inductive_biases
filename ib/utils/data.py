@@ -1,8 +1,7 @@
 """Data related utils."""
 
 from pathlib import Path
-from typing import Callable, Optional
-from typing_extensions import deprecated
+from typing import Optional
 
 import numpy as np
 import open3d as o3d
@@ -11,46 +10,12 @@ from plyfile import PlyData, PlyElement
 from ib.utils.logging_module import logging
 
 
-@deprecated("Do not use obj files")
-def load_obj(
-    file_path: str,
-    field_func: dict[str, Callable],
-) -> tuple[np.ndarray, ...]:
-    """Load OBJ pointcloud.
-
-    Args:
-        file_path (str): path to the file.
-        field_func (Dict[str, Callable]): specification which fields
-            to read from file (key) and which function to apply (value).
-    """
-    parsed_data = {k: [] for k in field_func.keys()}
-    with open(file_path, "r") as file:
-        for line in file:
-            parts = line.strip().split()
-            if not parts or parts[0] not in parsed_data:
-                continue
-            key = parts[0]
-            value = tuple(map(field_func[key], parts[1:]))
-
-            if key == "f" and len(value) > 3:
-                # Triangulate n-vertex faces
-                for i in range(1, len(value) - 1):
-                    parsed_data[key].append((value[0], value[i], value[i + 1]))
-            else:
-                parsed_data[key].append(value)
-
-    return [np.array(parsed_data[key]) for key in field_func]
-
-
 def load_pointcloud(file_path: Path) -> dict[str, np.ndarray]:
-    if file_path.suffix == ".xyz":
-        pc_data = load_xyz(file_path)
-    elif file_path.suffix == ".ply":
+    if file_path.suffix == ".ply":
         pc_data = load_ply(file_path)
     else:
         raise ValueError(
-            "Only .xyz and .ply are supported in evaluation, "
-            f"given: {file_path.suffix}."
+            "Only .ply are supported in evaluation, " f"given: {file_path.suffix}."
         )
     return pc_data
 
@@ -84,45 +49,12 @@ def load_ply(file_path: str) -> dict[str, np.ndarray]:
     return data
 
 
-def load_xyz(file_path: str) -> tuple[np.ndarray, np.ndarray]:
-    """Load XYZ pointcloud like SIREN authors."""
-    point_cloud = np.genfromtxt(file_path)
-    points = point_cloud[:, :3]
-    normals = point_cloud[:, 3:]
-    return points, normals
-
-
 def make_o3d_mesh(vertices: np.ndarray, faces: np.ndarray) -> o3d.geometry.TriangleMesh:
     """Create mesh object from vertices and faces."""
     mesh = o3d.geometry.TriangleMesh()
     mesh.vertices = o3d.utility.Vector3dVector(vertices)
     mesh.triangles = o3d.utility.Vector3iVector(faces)
     return mesh
-
-
-@deprecated("Do not use obj files")
-def write_obj(
-    file_path: Path,
-    field_data: dict[str, np.array],
-) -> None:
-    """Write OBJ pointcloud.
-
-    Args:
-        file_path (str): path to the file.
-        field_data (Dict[str, np.array]): name of the field to write and
-            its values in the array, line by line.
-    """
-    with open(file_path, "w") as outfile:
-        for field, data in field_data.items():
-            for row in data:
-                row = list(map(str, row))
-                outfile.write(f"{field} {' '.join(row)}\n")
-
-
-def write_xyz(file_path: Path, points: np.ndarray, normals: np.ndarray) -> None:
-    """Write XYZ pointcloud like SIREN authors."""
-    point_cloud = np.concatenate([points, normals], axis=-1)
-    np.savetxt(file_path, point_cloud)
 
 
 def write_ply(

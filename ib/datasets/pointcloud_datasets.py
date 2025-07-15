@@ -5,7 +5,7 @@ from abc import abstractmethod
 import numpy as np
 from torch.utils.data import Dataset
 
-from ib.utils.data import load_obj, load_ply, load_xyz
+from ib.utils.data import load_ply
 from ib.utils.logging_module import logging
 from ib.utils.pointcloud import filter_incorrect_normals
 
@@ -71,20 +71,6 @@ class PointCloudDataset(Dataset):
         Returns:
             Tuple[np.ndarray, np.ndarray]: Arrays of points and normals.
         """
-
-
-class ObjDataset(PointCloudDataset):
-    """Dataset class for OBJ format data."""
-
-    def load(self, file_path: str) -> tuple[np.ndarray, np.ndarray]:
-        return load_obj(file_path, {"v": float, "vn": float})
-
-
-class XyzDataset(PointCloudDataset):
-    """Dataset class for XYZ format data."""
-
-    def load(self, file_path: str) -> tuple[np.ndarray, np.ndarray]:
-        return load_xyz(file_path)
 
 
 class PlyDataset(PointCloudDataset):
