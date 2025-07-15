@@ -31,6 +31,8 @@ class SdfDataset(Dataset):
 
         logging.info(f"Dataset size: {self.num_samples} samples.")
         logging.info(f"Dataset size: {len(self)} batches.")
+        logging.warning("This dataset class was abandoned.")
+        logging.warning("The current evaluator class does not work with SDFs.")
 
     def __getitem__(self, _: int) -> dict[str, np.ndarray]:
 
@@ -113,6 +115,9 @@ class SparseSdfDataset(Dataset):
         logging.info(
             "Min-mean-max of SDF after clipping: " f"{sdf_min}, {sdf_mean}, {sdf_max}."
         )
+
+        logging.warning("This dataset class was abandoned.")
+        logging.warning("The current evaluator class does not work with SDFs.")
 
     def __getitem__(self, _: int) -> dict[str, np.ndarray]:
 
