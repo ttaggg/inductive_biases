@@ -1,7 +1,0 @@
-# https://drive.google.com/drive/folders/1_iq__37-hw7FJOEUK1tX7mdp8SKB368K
-
-defaults:
-  - dataset: xyz_dataset
-
-name: interior_room
-file_path: ${oc.env:HOME}/datasets/3d_scenes/siren_room/interior_room.xyz
