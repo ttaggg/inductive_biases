@@ -21,7 +21,7 @@ There are multiple commands provided by this project: training, evaluation, visu
 Run the training. All possible Hydra config values, including defaults are listed in `configs/` directory.
 ```bash
 # uv run training [HYDRA-OVERRIDES, scene is required]
-uv run training scene=scannet_room_2 inr=siren trainer.batch_size=250000 run_name=my_experiment_name
+uv run training scene=scannet_room_2 inr=siren trainer.batch_size=250000 run_name=my_exp
 ```
 Note: `run_name` is useful for organizing experiments.
 
@@ -38,7 +38,7 @@ uv run evaluate_model \
 --resolution=1536 \
 --batch-size=300000 \
 ```
-
+___
 
 ### Evaluate the mesh
 This script evaluates the generated mesh.
@@ -48,7 +48,7 @@ uv run evaluate_mesh \
 --file-path=path/to/ground_truth/pc_aligned.ply \
 --mesh-path=path/to/mesh/mesh.ply
 ```
-
+___
 ### Export INR to mesh
 This script exports the 3D shape encoded in the Implicit Neural Representation to a mesh file.
 ```bash
@@ -81,7 +81,7 @@ uv run preprocessing \
 uv run capture_camera_params \
 --mesh-path=path/to/mesh/mesh.ply
 ```
-
+___
 ### Take camera view and render
 ```bash
 # uv run render_image_from_mesh --help
@@ -89,7 +89,7 @@ uv run render_image_from_mesh \
 --mesh-path=path/to/mesh/mesh.ply \
 --cam-params-path=path/to/cam_params/cam_params.json
 ```
-
+___
 ### Make plots for a given experiments
 
 ```bash
@@ -99,7 +99,7 @@ uv run visualization \
 --scene=2 \
 --resolution=1536
 ```
-
+___
 ### Visualize model's coefficients
 
 ```bash
@@ -121,7 +121,7 @@ uv run pretrain_modulator \
 --mod-hidden-size=320 \
 --save-path=./modulator_320_softplus_relu_abc.pt
 ```
-
+___
 ### Generate Fourier complexity heatmaps
 Create images similar to the Neural Redshift paper.
 ```bash
