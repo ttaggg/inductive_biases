@@ -1,4 +1,4 @@
-# WIP: Neural Network Inductive Biases for High-fidelity 3D Reconstruction
+# Neural Network Inductive Biases for High-fidelity 3D Reconstruction
 
 ## Installation
 
@@ -10,69 +10,155 @@ pip install uv    # linux, macOS, ...
 # or
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
+Dependencies are in the `pyproject.toml`
+
 uv will automatically install all dependencies after the first `uv run ...` command.
 
-## Training
+## Overview
+There are multiple commands provided by this project: training, evaluation, visualization, data preprocessing and special tools. They are listed in this README, and the scripts are in the `ib/cli/` directory.
 
+## Training
+Run the training. All possible Hydra config values, including defaults are listed in `configs/` directory.
 ```bash
 # uv run training [HYDRA-OVERRIDES, scene is required]
-uv run training scene=thai_statue inr=siren trainer.batch_size=250000 run_name=my_experiment_name
+uv run training scene=scannet_room_2 inr=siren trainer.batch_size=250000 run_name=my_experiment_name
 ```
 Note: `run_name` is useful for organizing experiments.
 
 ## Evaluation
 
+### Evaluate the model
+This script evaluates a trained model using specified metrics (e.g., chamfer distance, normal distance, lpips, completeness).
+
 ```bash
-# uv run evaluation --help
-uv run evaluation --model-path=path/to/model.pt --metric=<metric_name> [--file-path=path/to/ground_truth.{ply,npy}] [--resolution=512] [--device=cuda]
+# uv run evaluate_model --help
+uv run evaluate_model \
+--file-path=path/to/ground_truth/pc_aligned.ply \
+--model-path=path/to/model/model.pt \
+--resolution=1536 \
+--batch-size=300000 \
 ```
-This script evaluates a trained model using specified metrics (e.g., chamfer distance, IoU, normal distance, Fourier frequencies).
 
-## Exporting INR to mesh
 
+### Evaluate the mesh
+This script evaluates the generated mesh.
+```bash
+# uv run evaluate_mesh --help
+uv run evaluate_mesh \
+--file-path=path/to/ground_truth/pc_aligned.ply \
+--mesh-path=path/to/mesh/mesh.ply
+```
+
+### Export INR to mesh
+This script exports the 3D shape encoded in the Implicit Neural Representation to a mesh file.
 ```bash
 # uv run decoding --help
-uv run decoding --model-path=path/to/model.pt [--resolution=512] [--batch-size=256000] [--device=cuda]
+uv run decoding \
+--model-path=path/to/model/model.pt \
+--resolution=512 \
+--batch-size=100000
 ```
-This script exports the shape encoded in the Implicit Neural Representation (INR) to a mesh file.
 
-## Resampling pointcloud from the OBJ mesh
-
-Will be deprecated or extended to work with .ply meshes.
-OBJ files are currently not used in the pipeline.
+## Data
+Preprocess the data: cut a portion of the scene, rotate if neccessary, annotate each point in a pointcloud with a label, save the corresponding ground truth mesh portion. Specific arguments are given in the YAML files for a corresponding sample.
 ```bash
-# uv run resampling --help
-uv run resampling --input-path=normalized_model.obj --num-samples=1000000
+# uv run preprocessing --help
+uv run preprocessing \
+--input-path=path/to/raw_data/pc_aligned.ply \
+--x-range -0.61 0.6 \
+--y-range -0.8 0.2 \
+--z-range -1.0 0.1 \
+--rotation-angle 1.0 \
+--margin 0.005
 ```
-This script resamples vertices from an input mesh file to generate a point cloud.
+
+
+## Visualization
+
+### Choose camera views for the mesh and save them
+```bash
+# uv run capture_camera_params --help
+uv run capture_camera_params \
+--mesh-path=path/to/mesh/mesh.ply
+```
+
+### Take camera view and render
+```bash
+# uv run render_image_from_mesh --help
+uv run render_image_from_mesh \
+--mesh-path=path/to/mesh/mesh.ply \
+--cam-params-path=path/to/cam_params/cam_params.json
+```
+
+### Make plots for a given experiments
+
+```bash
+# uv run visualization --help
+uv run visualization \
+--output-dir=output_dir \
+--scene=2 \
+--resolution=1536
+```
+
+### Visualize model's coefficients
+
+```bash
+# uv run coeffs_visualize --help
+uv run coeffs_visualize \
+--model-path=path/to/model/model.pt \
+--output-dir=output_dir
+```
+
+
+## Miscellaneous
+
+### Pretrain modulator
+
+Pretrain the modulator to return dummy coefficients. The checkpoint is then used to initialize SIREN-FM, this makes the training more stable during the early stages.
+```bash
+# uv run pretrain_modulator --help
+uv run pretrain_modulator \
+--mod-hidden-size=320 \
+--save-path=./modulator_320_softplus_relu_abc.pt
+```
+
+### Generate Fourier complexity heatmaps
+Create images similar to the Neural Redshift paper.
+```bash
+# uv run fourier_grid --help
+uv run fourier_grid \
+--resolution=128
+```
+
 
 ## Hydra config's layout
 
 ```
 ib/configs
 ├── config.yaml
+├── evaluator
+│   └── base_evaluator.yaml
 ├── inr
 │   ├── finer.yaml
 │   ├── relu_pe.yaml
-│   └── siren.yaml
+│   ├── siren.yaml
+│   ├── sirenfm.yaml
+│   └── staf.yaml
 ├── loss
 │   ├── l1_loss.yaml
 │   ├── l2_loss.yaml
 │   └── siren_sdf_loss.yaml
-├── scene
-│   ├── dataset
-│   │   ├── obj_dataset.yaml
-│   │   ├── ply_dataset.yaml
-│   │   ├── sdf_dataset.yaml
-│   │   └── xyz_dataset.yaml
-│   ├── interior_room.yaml
-│   ├── scannet_room_1.yaml
-│   ├── thai_statue.yaml
-│   └── thai_statue_sdf.yaml
 ├── model
 │   └── base_model.yaml
-├── evaluator
-│   └── base_evaluator.yaml
+├── scene
+│   ├── dataset
+│   │   ├── ply_dataset.yaml
+│   │   ├── sdf_dataset.yaml
+│   │   └── sparse_sdf_dataset.yaml
+│   ├── scannet_room_1.yaml
+│   ├── scannet_room_2.yaml
+│   ├── scannet_sdf.yaml
+│   └── thai_statue_sdf.yaml
 └── trainer
     └── base_trainer.yaml
 ```

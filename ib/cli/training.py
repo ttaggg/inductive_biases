@@ -18,7 +18,7 @@ def training(ctx: typer.Context) -> None:
     """Run the training.
 
     Command: uv run training [HYDRA-OVERRIDES] \n
-    Example: uv run training scene=thai_statue run_name=init
+    Example: uv run training scene=scannet_room_2 run_name=init
 
     The `scene` argument is required.
     """
