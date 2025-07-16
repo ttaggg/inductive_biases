@@ -144,7 +144,7 @@ def pretrain_modulator(
     mod_hidden_size: int = typer.Option(256, help="Modulator hidden size"),
     n_layers: int = typer.Option(4, help="Number of layers (hidden_layers + 1)"),
     num_frequencies: int = typer.Option(
-        10, help="Number of positional encoding frequencies"
+        5, help="Number of positional encoding frequencies"
     ),
     grid_size: int = typer.Option(128, help="Grid size for coordinate generation"),
     batch_size: int = typer.Option(10000, help="Training batch size"),

@@ -37,12 +37,12 @@ decoding = "ib.cli.decoding:app"
 evaluate_mesh = "ib.cli.evaluate_mesh:app"
 evaluate_model = "ib.cli.evaluate_model:app"
 # Visualization
-capture_camera_params = "ib.cli.capture_camera_params:app"
-coeffs_visualize = "ib.cli.coeffs_visualize:app"
-render_image_from_mesh = "ib.cli.render_image_from_mesh:app"
-visualization = "ib.cli.visualization:app"
+capture_camera_params = "ib.cli.vis.capture_camera_params:app"
+coeffs_visualize = "ib.cli.vis.coeffs_visualize:app"
+render_image_from_mesh = "ib.cli.vis.render_image_from_mesh:app"
+visualization = "ib.cli.vis.visualization:app"
 # Data
 preprocessing = "ib.cli.preprocessing:app"
 # Misc
-fourier_grid = "ib.cli.fourier_grid:app"
-pretrain_modulator = "ib.cli.pretrain_modulator:app"
+fourier_grid = "ib.cli.tools.fourier_grid:app"
+pretrain_modulator = "ib.cli.tools.pretrain_modulator:app"
